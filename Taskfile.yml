@@ -1,0 +1,9 @@
+version: "3"
+
+dotenv: [".env"] # Load environment variables from .env
+
+tasks:
+  sync:
+    desc: Sync code to Raspberry Pi
+    cmds:
+      - rsync -avz ./src/ $PI_HOST:$PI_PATH
