@@ -10,12 +10,12 @@ from utils.multi_event_detector import MultiEventDetector
 def button_press_callback(count: int, *, board: Board) -> None:
     if count == 1:
         time.sleep(0.4)  # simulate remote processing time
-        play_audio("./assets/time_15_21.mp3", "Es ist jetzt 15 Uhr 21.")
+        play_audio("./assets/time_12_29.mp3", "Es ist jetzt 12 Uhr 29.")
     else:
         time.sleep(2)  # simulate remote processing time
         play_audio(
-            "./assets/time_01_01_weather_forecast.mp3",
-            "Guten Abend! Es ist jetzt 01:01 in Berlin.\n\nDerzeit regnet es leicht bei etwa 18 Grad Celsius. Bis zum Vormittag bleibt es wechselhaft, die Temperaturen steigen dann auf rund 24 Grad. Ein Regenschirm bleibt sinnvoll. Der nächste Sonnenaufgang ist um 05:37.",
+            "./assets/time_12_29_weather_forecast.mp3",
+            "Guten Tag! Es ist jetzt 12:29 in Berlin.\n\nDer Himmel zeigt sich stark bewölkt, bei etwa 26 Grad Celsius. Im weiteren Tagesverlauf bleibt es durchgehend bewölkt, und die Temperaturen erreichen bis zum Nachmittag rund 27 Grad. Am Abend kühlt es auf etwa 22 Grad ab.",
         )
 
     # After the audio output, switch off the LED
