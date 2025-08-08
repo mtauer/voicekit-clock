@@ -6,4 +6,4 @@ tasks:
   sync:
     desc: Sync code to Raspberry Pi
     cmds:
-      - rsync -avz ./src/ $PI_HOST:$PI_PROJECT_PATH --exclude .venv --exclude .env
+      - rsync -avz ./src/voicekit-clock/ $PI_HOST:$PI_PROJECT_PATH --exclude .env
