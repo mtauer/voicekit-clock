@@ -35,7 +35,7 @@ def main():
 
                 detector.handle_event(None, board=board)
                 # small debounce delay
-                time.sleep(0.05)
+                time.sleep(0.01)
 
 
 if __name__ == "__main__":
