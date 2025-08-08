@@ -3,6 +3,11 @@ version: "3"
 dotenv: [".env"] # Load environment variables from .env
 
 tasks:
+  init:
+    desc: Initializes the project
+    cmds:
+      - scp ./raspberry-pi/etc/systemd/system/voicekit-clock.service $PI_HOST:~/voicekit-clock.service
+
   sync:
     desc: Sync code to Raspberry Pi
     cmds:
