@@ -27,7 +27,7 @@ def button_press_callback(count: int, *, board: Board) -> None:
     else:
         # Shutdown
         play_audio(
-            "./assets/shutdown.mp3",
+            "./assets/de-DE/shutdown.mp3",
             "...beende die Sprachuhr.",
         )
         subprocess.run(["sudo", "shutdown", "-h", "now"])
@@ -43,12 +43,12 @@ def _advanced_actions(count: int) -> None:
     elif count == 2:
         time.sleep(2)  # simulate remote processing time
         play_audio(
-            "./assets/time_13_33_weather_forecast.mp3",
+            "./assets/de-DE/time_13_33_weather_forecast.mp3",
             "Guten Tag! Es ist jetzt 13:33 in Berlin.\n\nAktuell ist es überwiegend sonnig bei etwa 27 Grad Celsius. Am Nachmittag steigen die Temperaturen weiter bis auf rund 30 Grad. Auch am frühen Abend bleibt es weiterhin sonnig und angenehm - ein perfekter Spätsommertag!",
         )
     elif count == 5:
         play_audio(
-            "./assets/fallback_instructions.mp3",
+            "./assets/de-DE/fallback_instructions.mp3",
             "So functioniert die Sprachuhr:\n\nDrücke den grünen Knopf einmal, um die aktuelle Uhrzeit zu hören. Drücke ihn zweimal, für die Uhrzeit und zusätzlich einen kurzen Wetterbericht. Drücke ihn fünfmal, um diese Anleitung erneut zu hören. Drücke ihn sechsmal, um eine Selbstdiagnose zu starten. Und schließlich, drücke ihn siebenmal, um die Sprachuhr herunterzufahren.",
         )
 
@@ -59,7 +59,7 @@ def _fallback_actions(count: int) -> None:
         say(current_time_sentence, lang="de-DE")
     elif count == 5:
         play_audio(
-            "./assets/fallback_instructions_fallback.mp3",
+            "./assets/de-DE/fallback_instructions_fallback.mp3",
             "So functioniert die Sprachuhr:\n\nDrücke den grünen Knopf einmal, um die aktuelle Uhrzeit zu hören. Drücke ihn fünfmal, um diese Anleitung erneut zu hören. Drücke ihn sechsmal, um eine Selbstdiagnose zu starten. Und schließlich, drücke ihn siebenmal, um die Sprachuhr herunterzufahren.",
         )
 
@@ -78,7 +78,7 @@ def main():
     detector = MultiEventDetector(button_press_callback, debounce_delay=0.5)
     with Board() as board:
         print("🕰️  VoiceKit Clock - Detecting button press events ...")
-        play_audio("./assets/starting.mp3", "...starte Sprachuhr.")
+        play_audio("./assets/de-DE/starting.mp3", "...starte Sprachuhr.")
         while True:
             if board.button.wait_for_press():
                 # Switch the LED on before the debounce time for the button events
