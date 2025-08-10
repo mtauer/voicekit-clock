@@ -10,26 +10,26 @@ from utils.multi_event_detector import MultiEventDetector
 def button_press_callback(count: int, *, board: Board) -> None:
     if count == 1:
         time.sleep(0.4)  # simulate remote processing time
-        play_audio("./assets/time_12_29.mp3", "Es ist jetzt 12 Uhr 29.")
+        play_audio("./assets/time_13_33.mp3", "Es ist jetzt 13:33.")
     else:
         time.sleep(2)  # simulate remote processing time
         play_audio(
-            "./assets/time_12_29_weather_forecast.mp3",
-            "Guten Tag! Es ist jetzt 12:29 in Berlin.\n\nDer Himmel zeigt sich stark bewölkt, bei etwa 26 Grad Celsius. Im weiteren Tagesverlauf bleibt es durchgehend bewölkt, und die Temperaturen erreichen bis zum Nachmittag rund 27 Grad. Am Abend kühlt es auf etwa 22 Grad ab.",
+            "./assets/time_13_33_weather_forecast.mp3",
+            "Guten Tag! Es ist jetzt 13:33 in Berlin.\n\nAktuell ist es überwiegend sonnig bei etwa 27 Grad Celsius. Am Nachmittag steigen die Temperaturen weiter bis auf rund 30 Grad. Auch am frühen Abend bleibt es weiterhin sonnig und angenehm - ein perfekter Spätsommertag!",
         )
 
-    # After the audio output, switch off the LED
+    # After the audio output has finished, switch off the LED
     board.led.state = Led.OFF
 
 
 def main():
-    detector = MultiEventDetector(button_press_callback)
+    detector = MultiEventDetector(button_press_callback, debounce_delay=0.5)
     with Board() as board:
         print("🕰️  VoiceKit Clock - Detecting button press events ...")
         play_audio("./assets/starting.mp3", "...starte Sprachuhr.")
         while True:
             if board.button.wait_for_press():
-                # Switch LED on before the debounce time for the button events
+                # Switch the LED on before the debounce time for the button events
                 # has ended to give a more immediate feedback to the user.
                 board.led.state = Led.ON
 
