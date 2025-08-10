@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import datetime
+import subprocess
 import time
-import sys
 
 from aiy.board import Board, Led
+from aiy.voice.tts import say
+
 
 from utils.audio import play_audio, synthesize_text
 from utils.load_dotenv import load_dotenv
@@ -16,12 +18,20 @@ def button_press_callback(count: int, *, board: Board) -> None:
     if count == 1:
         current_time_sentence = "Es ist jetzt {:%H:%M}.".format(datetime.datetime.now())
         synthesize_text(current_time_sentence)
-    else:
+        # say(current_time_sentence, lang="de-DE")
+    elif count == 2:
         time.sleep(2)  # simulate remote processing time
         play_audio(
             "./assets/time_13_33_weather_forecast.mp3",
             "Guten Tag! Es ist jetzt 13:33 in Berlin.\n\nAktuell ist es überwiegend sonnig bei etwa 27 Grad Celsius. Am Nachmittag steigen die Temperaturen weiter bis auf rund 30 Grad. Auch am frühen Abend bleibt es weiterhin sonnig und angenehm - ein perfekter Spätsommertag!",
         )
+    elif count >= 7:
+        # Shutdown
+        play_audio(
+            "./assets/shutdown.mp3",
+            "...beende die Sprachuhr.",
+        )
+        subprocess.run(["sudo", "shutdown", "-h", "now"])
 
     # After the audio output has finished, switch off the LED
     board.led.state = Led.OFF
