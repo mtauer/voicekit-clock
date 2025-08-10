@@ -27,9 +27,9 @@ def _bad_request(msg: str) -> Dict[str, Any]:
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     qs = (event or {}).get("queryStringParameters") or {}
-    text = qs.get("text-content")
+    text = qs.get("text")
     if not text:
-        return _bad_request("Missing required query parameter: text-content")
+        return _bad_request("Missing required query parameter: text")
 
     cleaned_text = re.sub(r"[^a-zA-Z0-9]", "_", text)
     cache_key = f"polly/{TTS_VOICE_ID}/{cleaned_text}.{TTS_OUTPUT_FORMAT}"

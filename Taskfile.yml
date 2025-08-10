@@ -11,7 +11,7 @@ tasks:
   sync:
     desc: Sync code to Raspberry Pi.
     cmds:
-      - rsync -avz ./src/voicekit-clock/ $PI_HOST:$PI_PROJECT_PATH --exclude .env
+      - rsync -avz ./src/voicekit-clock/ $PI_HOST:$PI_PROJECT_PATH
 
   infra:login:
     desc: Log in to AWS so that other infra tasks are available.

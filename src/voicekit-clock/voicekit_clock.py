@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
+import datetime
 import time
+import sys
 
 from aiy.board import Board, Led
 
-from utils.audio import play_audio
+from utils.audio import play_audio, synthesize_text
+from utils.load_dotenv import load_dotenv
 from utils.multi_event_detector import MultiEventDetector
+
+load_dotenv()
 
 
 def button_press_callback(count: int, *, board: Board) -> None:
     if count == 1:
-        time.sleep(0.4)  # simulate remote processing time
-        play_audio("./assets/time_13_33.mp3", "Es ist jetzt 13:33.")
+        current_time_sentence = "Es ist jetzt {:%H:%M}.".format(datetime.datetime.now())
+        synthesize_text(current_time_sentence)
     else:
         time.sleep(2)  # simulate remote processing time
         play_audio(
