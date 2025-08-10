@@ -8,6 +8,8 @@ A voice clock with a one button interface.
 
 ### Local dev environment
 
+Hint: Define your AWS SSO profile with `export AWS_PROFILE=<profile-name>`.
+
 ### Customize the Raspberry Pi
 
 Establish an SSH connection with the Raspberry Pi.

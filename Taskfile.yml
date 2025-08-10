@@ -4,11 +4,32 @@ dotenv: [".env"] # Load environment variables from .env
 
 tasks:
   init:
-    desc: Initializes the project
+    desc: Initializes the project.
     cmds:
       - scp ./raspberry-pi/etc/systemd/system/voicekit-clock.service $PI_HOST:~/voicekit-clock.service
 
   sync:
-    desc: Sync code to Raspberry Pi
+    desc: Sync code to Raspberry Pi.
     cmds:
       - rsync -avz ./src/voicekit-clock/ $PI_HOST:$PI_PROJECT_PATH --exclude .env
+
+  infra:login:
+    desc: Log in to AWS so that other infra tasks are available.
+    cmds:
+      - echo "Current AWS profile - AWS_PROFILE '$AWS_PROFILE', AWS_DEFAULT_PROFILE '$AWS_DEFAULT_PROFILE'"
+      - aws sso login
+
+  infra:deploy:
+    desc: Deploys the infrastructure and server-less code through AWS CDK.
+    cmds:
+      - cd infra/cdk && cdk deploy
+
+  infra:deploy:hot-swap:
+    desc: Deploys the infrastructure and server-less code through AWS CDK as Hotswap deployment.
+    cmds:
+      - cd infra/cdk && cdk deploy --hot-swap
+
+  infra:destroy:force:
+    desc: Delete the AWS CDK stack and shut down all related resources.
+    cmds:
+      - cd infra/cdk && cdk destroy
