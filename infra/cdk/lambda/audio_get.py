@@ -1,14 +1,20 @@
 import base64
 import json
 import os
+import re
 from typing import Dict, Any
 
 import boto3
 from botocore.exceptions import ClientError
 
 s3 = boto3.client("s3")
+polly = boto3.client("polly")
 
-BUCKET = os.environ["BUCKET_NAME"]
+BUCKET_NAME = os.environ["BUCKET_NAME"]
+TTS_VOICE_ID = os.environ["TTS_VOICE_ID"]
+TTS_ENGINE = os.environ["TTS_ENGINE"]
+TTS_OUTPUT_FORMAT = os.environ["TTS_OUTPUT_FORMAT"]
+TTS_SAMPLE_RATE = os.environ["TTS_SAMPLE_RATE"]
 
 
 def _bad_request(msg: str) -> Dict[str, Any]:
@@ -25,10 +31,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     if not text:
         return _bad_request("Missing required query parameter: text-content")
 
+    cleaned_text = re.sub(r"[^a-zA-Z0-9]", "_", text)
+    cache_key = f"polly/{TTS_VOICE_ID}/{cleaned_text}.{TTS_OUTPUT_FORMAT}"
+
     # Try to serve from cache
     try:
-        key = "time_13_33.mp3"
-        obj = s3.get_object(Bucket=BUCKET, Key=key)
+        obj = s3.get_object(Bucket=BUCKET_NAME, Key=cache_key)
         body = obj["Body"].read()
         return _audio_response(body)
     except ClientError as e:
@@ -36,11 +44,35 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             # For other S3 errors, bubble up as 500
             return _server_error(f"S3 error: {e}")
 
-    return {
-        "statusCode": 200,
-        "headers": {"Content-Type": "application/json"},
-        "body": json.dumps(body),
-    }
+    # Not cached -> synthesize with Polly, store, return
+    try:
+        res = polly.synthesize_speech(
+            Text=text,
+            TextType="text",
+            OutputFormat=TTS_OUTPUT_FORMAT,
+            SampleRate=TTS_SAMPLE_RATE,
+            VoiceId=TTS_VOICE_ID,
+            Engine=TTS_ENGINE,
+        )
+        audio_stream = res.get("AudioStream")
+        if audio_stream is None:
+            return _server_error("No audio stream from Polly.")
+
+        audio_bytes = audio_stream.read()
+
+        # Cache to S3
+        s3.put_object(
+            Bucket=BUCKET_NAME,
+            Key=cache_key,
+            Body=audio_bytes,
+            ContentType="audio/mpeg",
+            CacheControl="public, max-age=31536000, immutable",
+        )
+
+        return _audio_response(audio_bytes)
+
+    except ClientError as e:
+        return _server_error(f"Polly error: {e}")
 
 
 def _audio_response(audio_bytes: bytes) -> Dict[str, Any]:

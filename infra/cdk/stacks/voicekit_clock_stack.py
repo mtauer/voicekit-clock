@@ -40,11 +40,11 @@ class VoicekitClockStack(Stack):
             memory_size=512,
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
-                # Defaults tuned for German (focused on natural synthesis)
-                "DEFAULT_VOICE_ID": "Daniel",  # 'Vicky' or 'Daniel' for generative engine
-                "DEFAULT_ENGINE": "generative",  # 'standard', 'neural', 'long-form', or 'generative'
-                "DEFAULT_OUTPUT_FORMAT": "mp3",
-                "DEFAULT_SAMPLE_RATE": "24000",  # '8000', '16000', '22050', or '24000'
+                # text-to-speech options tuned for German (focused on natural synthesis)
+                "TTS_VOICE_ID": "Daniel",  # 'Vicky' or 'Daniel' for generative engine
+                "TTS_ENGINE": "generative",  # 'standard', 'neural', 'long-form', or 'generative'
+                "TTS_OUTPUT_FORMAT": "mp3",
+                "TTS_SAMPLE_RATE": "24000",  # '8000', '16000', '22050', or '24000'
             },
         )
 
