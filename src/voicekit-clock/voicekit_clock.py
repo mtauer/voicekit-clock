@@ -46,17 +46,27 @@ def _advanced_actions(count: int) -> None:
             "./assets/time_13_33_weather_forecast.mp3",
             "Guten Tag! Es ist jetzt 13:33 in Berlin.\n\nAktuell ist es überwiegend sonnig bei etwa 27 Grad Celsius. Am Nachmittag steigen die Temperaturen weiter bis auf rund 30 Grad. Auch am frühen Abend bleibt es weiterhin sonnig und angenehm - ein perfekter Spätsommertag!",
         )
+    elif count == 5:
+        play_audio(
+            "./assets/fallback_instructions.mp3",
+            "So functioniert die Sprachuhr:\n\nDrücke den grünen Knopf einmal, um die aktuelle Uhrzeit zu hören. Drücke ihn zweimal, für die Uhrzeit und zusätzlich einen kurzen Wetterbericht. Drücke ihn fünfmal, um diese Anleitung erneut zu hören. Drücke ihn sechsmal, um eine Selbstdiagnose zu starten. Und schließlich, drücke ihn siebenmal, um die Sprachuhr herunterzufahren.",
+        )
 
 
 def _fallback_actions(count: int) -> None:
     if count == 1:
         current_time_sentence = "Es ist jetzt {:%H:%M}.".format(datetime.datetime.now())
         say(current_time_sentence, lang="de-DE")
+    elif count == 5:
+        play_audio(
+            "./assets/fallback_instructions_fallback.mp3",
+            "So functioniert die Sprachuhr:\n\nDrücke den grünen Knopf einmal, um die aktuelle Uhrzeit zu hören. Drücke ihn fünfmal, um diese Anleitung erneut zu hören. Drücke ihn sechsmal, um eine Selbstdiagnose zu starten. Und schließlich, drücke ihn siebenmal, um die Sprachuhr herunterzufahren.",
+        )
 
 
 def _is_connected() -> bool:
     # TODO: implement
-    return False
+    return True
 
 
 def _is_server_up() -> bool:
