@@ -15,17 +15,16 @@ load_dotenv()
 
 
 def button_press_callback(count: int, *, board: Board) -> None:
-    if count == 1:
-        current_time_sentence = "Es ist jetzt {:%H:%M}.".format(datetime.datetime.now())
-        synthesize_text(current_time_sentence)
-        # say(current_time_sentence, lang="de-DE")
-    elif count == 2:
-        time.sleep(2)  # simulate remote processing time
-        play_audio(
-            "./assets/time_13_33_weather_forecast.mp3",
-            "Guten Tag! Es ist jetzt 13:33 in Berlin.\n\nAktuell ist es überwiegend sonnig bei etwa 27 Grad Celsius. Am Nachmittag steigen die Temperaturen weiter bis auf rund 30 Grad. Auch am frühen Abend bleibt es weiterhin sonnig und angenehm - ein perfekter Spätsommertag!",
-        )
-    elif count >= 7:
+    if count <= 5:
+        if not _is_connected() or not _is_server_up():
+            _fallback_actions(count)
+        else:
+            _advanced_actions(count)
+
+    elif count == 6:
+        # TODO: Self-diagnosis
+        pass
+    else:
         # Shutdown
         play_audio(
             "./assets/shutdown.mp3",
@@ -35,6 +34,34 @@ def button_press_callback(count: int, *, board: Board) -> None:
 
     # After the audio output has finished, switch off the LED
     board.led.state = Led.OFF
+
+
+def _advanced_actions(count: int) -> None:
+    if count == 1:
+        current_time_sentence = "Es ist jetzt {:%H:%M}.".format(datetime.datetime.now())
+        synthesize_text(current_time_sentence)
+    elif count == 2:
+        time.sleep(2)  # simulate remote processing time
+        play_audio(
+            "./assets/time_13_33_weather_forecast.mp3",
+            "Guten Tag! Es ist jetzt 13:33 in Berlin.\n\nAktuell ist es überwiegend sonnig bei etwa 27 Grad Celsius. Am Nachmittag steigen die Temperaturen weiter bis auf rund 30 Grad. Auch am frühen Abend bleibt es weiterhin sonnig und angenehm - ein perfekter Spätsommertag!",
+        )
+
+
+def _fallback_actions(count: int) -> None:
+    if count == 1:
+        current_time_sentence = "Es ist jetzt {:%H:%M}.".format(datetime.datetime.now())
+        say(current_time_sentence, lang="de-DE")
+
+
+def _is_connected() -> bool:
+    # TODO: implement
+    return False
+
+
+def _is_server_up() -> bool:
+    # TODO: implement
+    return True
 
 
 def main():
