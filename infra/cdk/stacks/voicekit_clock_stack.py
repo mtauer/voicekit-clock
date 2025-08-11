@@ -7,9 +7,17 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_s3 as s3,
 )
+from aws_cdk import aws_lambda_python_alpha as lambda_python
 from constructs import Construct
-
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
+
+
+WEATHER_API_BASE_URL = os.environ["WEATHER_API_BASE_URL"]
+WEATHER_API_KEY = os.environ["WEATHER_API_KEY"]
+WEATHER_API_LOCATION = os.environ["WEATHER_API_LOCATION"]
 
 
 class VoicekitClockStack(Stack):
@@ -27,17 +35,16 @@ class VoicekitClockStack(Stack):
             enforce_ssl=True,
         )
 
-        # Lambda function that synthesizes/serves MP3
+        # GET /audio
         audio_get_fn = _lambda.Function(
             self,
             "AudioGetHandler",
+            handler="api.audio.get.index.handler",  # <file path>.<function name>
+            code=_lambda.Code.from_asset("lambda"),
             runtime=_lambda.Runtime.PYTHON_3_12,
-            handler="audio_get.handler",
-            code=_lambda.Code.from_asset(
-                os.path.join(os.path.dirname(__file__), "..", "lambda")
-            ),
+            architecture=_lambda.Architecture.ARM_64,  # or X86_64; ARM is cheaper
+            memory_size=256,
             timeout=Duration.seconds(15),
-            memory_size=512,
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
                 # text-to-speech options tuned for German (focused on natural synthesis)
@@ -48,13 +55,32 @@ class VoicekitClockStack(Stack):
             },
         )
 
-        # Allow Lambda to read/write S3 and synthesize with Polly
+        # Allow lambda to read/write S3 and synthesize with Polly
         bucket.grant_read_write(audio_get_fn)
         audio_get_fn.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["polly:SynthesizeSpeech"],
                 resources=["*"],  # Polly SynthesizeSpeech generally requires '*'
             )
+        )
+
+        # POST /next-actions
+        next_actions_post_fn = lambda_python.PythonFunction(
+            self,
+            "NextActionsPostHandler",
+            entry="lambda",
+            index="api/next_actions/post/index.py",  # file name
+            handler="handler",  # function name
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            architecture=_lambda.Architecture.ARM_64,  # or X86_64; ARM is cheaper
+            memory_size=256,
+            timeout=Duration.seconds(60),
+            environment={
+                "WEATHER_API_BASE_URL": WEATHER_API_BASE_URL,
+                "WEATHER_API_KEY": WEATHER_API_KEY,
+                "WEATHER_API_LOCATION": WEATHER_API_LOCATION,
+                "WEATHER_API_LANG": "de",
+            },
         )
 
         # API Gateway with binary media type for MP3 and API key requirement
@@ -74,7 +100,14 @@ class VoicekitClockStack(Stack):
         audio_res.add_method(
             http_method="GET",
             integration=apigw.LambdaIntegration(audio_get_fn),
-            api_key_required=True,  # lock it down with API key
+            api_key_required=True,
+        )
+
+        next_actions_res = api.root.add_resource("next-actions")
+        next_actions_res.add_method(
+            http_method="POST",
+            integration=apigw.LambdaIntegration(next_actions_post_fn),
+            api_key_required=True,
         )
 
         # Create an API key + usage plan and connect it to the stage/method
