@@ -19,10 +19,10 @@ class WeatherApiClient:
         qs = urllib.parse.urlencode(params)
         url = f"{WEATHER_API_BASE_URL}{url_path}?{qs}"
         req = urllib.request.Request(url, headers={"User-Agent": "weather-client/1.0"})
-        with urllib.request.urlopen(req, timeout=20) as response:
-            if response.status != 200:
-                raise RuntimeError(f"WeatherAPI HTTP {response.status}")
-            return json.load(response)
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            if resp.status != 200:
+                raise RuntimeError(f"WeatherAPI HTTP {resp.status}")
+            return json.load(resp)
 
     def get_forecast(
         self,

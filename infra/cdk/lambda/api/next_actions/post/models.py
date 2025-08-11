@@ -122,7 +122,7 @@ class ForecastDescription(BaseModel):
     astro_tomorrow: Astro | None = None
 
 
-def from_weather_api_get_forecast_response(
+def from_weather_api_forecast_response(
     src: GetForecastResponse,
     # now: datetime | None = None
 ) -> ForecastDescription:
