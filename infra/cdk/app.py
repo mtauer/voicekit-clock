@@ -2,15 +2,10 @@
 
 import aws_cdk as cdk
 
-from stacks.voicekit_clock_stack import (
-    VoicekitClockStack,
-)
+from stacks.voicekit_clock_stack import VoicekitClockStack
 
 
 app = cdk.App()
-VoicekitClockStack(
-    app,
-    "VoicekitClockStack",
-)
+VoicekitClockStack(app, "VoicekitClockStack")
 
 app.synth()
