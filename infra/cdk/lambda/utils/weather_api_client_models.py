@@ -1,13 +1,15 @@
+# WeatherAPI.com specific data models (postfixed with "Wa")
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class Condition(BaseModel):
+class ConditionWa(BaseModel):
     text: str
     icon: str
     code: int
 
 
-class AirQuality(BaseModel):
+class AirQualityWa(BaseModel):
     co: float
     no2: float
     o3: float
@@ -22,7 +24,7 @@ class AirQuality(BaseModel):
     )
 
 
-class Location(BaseModel):
+class LocationWa(BaseModel):
     name: str
     region: str
     country: str
@@ -33,13 +35,13 @@ class Location(BaseModel):
     localtime: str
 
 
-class Current(BaseModel):
+class CurrentWa(BaseModel):
     last_updated_epoch: int
     last_updated: str
     temp_c: float
     temp_f: float
     is_day: int
-    condition: Condition
+    condition: ConditionWa
     wind_mph: float
     wind_kph: float
     wind_degree: int
@@ -63,14 +65,14 @@ class Current(BaseModel):
     uv: float
     gust_mph: float
     gust_kph: float
-    air_quality: AirQuality | None
+    air_quality: AirQualityWa | None
     short_rad: float
     diff_rad: float
     dni: float
     gti: float
 
 
-class Day(BaseModel):
+class DayWa(BaseModel):
     maxtemp_c: float
     maxtemp_f: float
     mintemp_c: float
@@ -89,12 +91,12 @@ class Day(BaseModel):
     daily_chance_of_rain: int
     daily_will_it_snow: int
     daily_chance_of_snow: int
-    condition: Condition
+    condition: ConditionWa
     uv: float
-    air_quality: AirQuality
+    air_quality: AirQualityWa
 
 
-class Astro(BaseModel):
+class AstroWa(BaseModel):
     sunrise: str
     sunset: str
     moonrise: str
@@ -105,13 +107,13 @@ class Astro(BaseModel):
     is_sun_up: int
 
 
-class Hour(BaseModel):
+class HourWa(BaseModel):
     time_epoch: int
     time: str
     temp_c: float
     temp_f: float
     is_day: int
-    condition: Condition
+    condition: ConditionWa
     wind_mph: float
     wind_kph: float
     wind_degree: int
@@ -140,26 +142,26 @@ class Hour(BaseModel):
     gust_mph: float
     gust_kph: float
     uv: float
-    air_quality: AirQuality
+    air_quality: AirQualityWa
     short_rad: float
     diff_rad: float
     dni: float
     gti: float
 
 
-class ForecastDay(BaseModel):
+class ForecastDayWa(BaseModel):
     date: str
     date_epoch: int
-    day: Day
-    astro: Astro
-    hour: list[Hour]
+    day: DayWa
+    astro: AstroWa
+    hour: list[HourWa]
 
 
-class Forecast(BaseModel):
-    forecastday: list[ForecastDay]
+class ForecastWa(BaseModel):
+    forecastday: list[ForecastDayWa]
 
 
-class Alert(BaseModel):
+class AlertWa(BaseModel):
     headline: str
     msgtype: str
     severity: str
@@ -175,8 +177,8 @@ class Alert(BaseModel):
     instruction: str
 
 
-class Alerts(BaseModel):
-    alert: list[Alert]
+class AlertsWa(BaseModel):
+    alert: list[AlertWa]
 
 
 class GetForecastResponse(BaseModel):
@@ -185,7 +187,7 @@ class GetForecastResponse(BaseModel):
         validate_by_name=True,  # also allow field names
     )
 
-    location: Location
-    current: Current
-    forecast: Forecast
-    alerts: Alerts | None
+    location: LocationWa
+    current: CurrentWa
+    forecast: ForecastWa
+    alerts: AlertsWa | None
