@@ -7,6 +7,7 @@ from aiy.board import Board, Led
 from aiy.voice.tts import say
 
 
+from utils.actions import get_next_action
 from utils.audio import play_audio, synthesize_text
 from utils.load_dotenv import load_dotenv
 from utils.multi_event_detector import MultiEventDetector
@@ -40,12 +41,11 @@ def _advanced_actions(count: int) -> None:
     if count == 1:
         current_time_sentence = "Es ist jetzt {:%H:%M}.".format(datetime.datetime.now())
         synthesize_text(current_time_sentence)
-    elif count == 2:
-        time.sleep(2)  # simulate remote processing time
-        play_audio(
-            "./assets/de-DE/time_13_33_weather_forecast.mp3",
-            "Guten Tag! Es ist jetzt 13:33 in Berlin.\n\nAktuell ist es überwiegend sonnig bei etwa 27 Grad Celsius. Am Nachmittag steigen die Temperaturen weiter bis auf rund 30 Grad. Auch am frühen Abend bleibt es weiterhin sonnig und angenehm - ein perfekter Spätsommertag!",
-        )
+    elif count == 2 or count == 3 or count == 4:
+        # For multi-press events of count 2-4, let the server decide for the action
+        action = get_next_action()
+        if action["action_type"] == "say":
+            synthesize_text(action["text"])
     elif count == 5:
         play_audio(
             "./assets/de-DE/fallback_instructions.mp3",
