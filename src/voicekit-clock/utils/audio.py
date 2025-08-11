@@ -7,15 +7,16 @@ import contextlib
 
 def play_audio(mp3_path: str, content: str) -> None:
     print(f'🔈  "{content}"')
-    try:
-        # Workaround explanation:
-        # On the Raspberry Pi (especially with the AIY Voice Kit), playing MP3s directly with mpg123
-        # sometimes causes crackling or sizzling noises due to mismatches between the MP3 audio format
-        # and the ALSA audio output.
-        #
-        # By first converting the MP3 to a 48 kHz WAV file (a format ALSA handles more consistently),
-        # and then playing it with `aplay`, we achieve clean and stable audio output without distortion.
 
+    # Workaround explanation:
+    # On the Raspberry Pi (especially with the AIY Voice Kit), playing MP3s directly with mpg123
+    # sometimes causes crackling or sizzling noises due to mismatches between the MP3 audio format
+    # and the ALSA audio output.
+    #
+    # By first converting the MP3 to a 48 kHz WAV file (a format ALSA handles more consistently),
+    # and then playing it with `aplay`, we achieve clean and stable audio output without distortion.
+
+    try:
         wav_path = "voicekit_clock_audio.wav"
 
         # Convert MP3 to WAV
@@ -28,6 +29,12 @@ def play_audio(mp3_path: str, content: str) -> None:
 
     except subprocess.CalledProcessError as e:
         print(f"Playback with mpg123 failed: {e}")
+
+    try:
+        # Remove temp wav file
+        subprocess.run(["rm", wav_path], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Remove temp wav file failed: {e}")
 
 
 def synthesize_text(content: str) -> None:
@@ -74,3 +81,9 @@ def synthesize_text(content: str) -> None:
         f.write(data)
 
     play_audio(mp3_path, content)
+
+    # Remove temp mp3 file
+    try:
+        subprocess.run(["rm", mp3_path], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Remove temp mp3 file failed: {e}")
