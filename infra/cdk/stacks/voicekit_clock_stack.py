@@ -76,11 +76,48 @@ class VoicekitClockStack(Stack):
             memory_size=256,
             timeout=Duration.seconds(60),
             environment={
+                "BEDROCK_REGION": "eu-central-1",
+                "BEDROCK_MODEL_ID": "eu.anthropic.claude-sonnet-4-20250514-v1:0",
                 "WEATHER_API_BASE_URL": WEATHER_API_BASE_URL,
                 "WEATHER_API_KEY": WEATHER_API_KEY,
                 "WEATHER_API_LOCATION": WEATHER_API_LOCATION,
                 "WEATHER_API_LANG": "de",
             },
+        )
+
+        # Allow invoking the EU Sonnet 4 inference profile
+        LLM_INFERENCE_PROFILE_ARN = f"arn:aws:bedrock:eu-central-1:{self.account}:inference-profile/eu.anthropic.claude-sonnet-4-20250514-v1:0"
+        next_actions_post_fn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "bedrock:InvokeModel",
+                ],
+                resources=[LLM_INFERENCE_PROFILE_ARN],
+            )
+        )
+
+        # Allow invoking the routed foundation models
+        DEST_LLM_MODEL_ARNS = [
+            # EU destinations for the EU Claude Sonnet 4 profile
+            "arn:aws:bedrock:eu-central-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
+            "arn:aws:bedrock:eu-west-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
+            "arn:aws:bedrock:eu-west-3::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
+            "arn:aws:bedrock:eu-north-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
+            "arn:aws:bedrock:eu-south-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
+            "arn:aws:bedrock:eu-south-2::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
+        ]
+        next_actions_post_fn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "bedrock:InvokeModel",
+                ],
+                resources=DEST_LLM_MODEL_ARNS,
+                conditions={
+                    "StringLike": {
+                        "bedrock:InferenceProfileArn": LLM_INFERENCE_PROFILE_ARN
+                    }
+                },
+            )
         )
 
         # API Gateway with binary media type for MP3 and API key requirement
