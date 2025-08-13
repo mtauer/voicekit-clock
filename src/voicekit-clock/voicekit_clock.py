@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import datetime
+import socket
 import subprocess
 import time
 
@@ -64,9 +65,22 @@ def _fallback_actions(count: int) -> None:
         )
 
 
-def _is_connected() -> bool:
-    # TODO: implement
-    return True
+def _is_connected(timeout: float = 3.0) -> bool:
+    """
+    Returns True if there's an active internet connection, False otherwise.
+    Attempts a TCP connection to a stable public IP (Google's DNS).
+    """
+    try:
+        # Use a well-known, highly available IP and port (Google DNS over TCP)
+        host = "8.8.8.8"
+        port = 53
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect((host, port))
+        sock.close()
+        return True
+    except OSError:
+        return False
 
 
 def _is_server_up() -> bool:
