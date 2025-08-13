@@ -2,7 +2,7 @@ import base64
 import json
 import os
 import re
-from typing import Dict, Any
+from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
@@ -17,7 +17,7 @@ TTS_OUTPUT_FORMAT = os.environ["TTS_OUTPUT_FORMAT"]
 TTS_SAMPLE_RATE = os.environ["TTS_SAMPLE_RATE"]
 
 
-def _bad_request(msg: str) -> Dict[str, Any]:
+def _bad_request(msg: str) -> dict[str, Any]:
     return {
         "statusCode": 400,
         "headers": {"Content-Type": "application/json"},
@@ -25,7 +25,7 @@ def _bad_request(msg: str) -> Dict[str, Any]:
     }
 
 
-def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     qs = (event or {}).get("queryStringParameters") or {}
     text = qs.get("text")
     if not text:
@@ -79,7 +79,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         return _server_error(f"Polly error: {e}")
 
 
-def _audio_response(audio_bytes: bytes) -> Dict[str, Any]:
+def _audio_response(audio_bytes: bytes) -> dict[str, Any]:
     # API Gateway (Lambda proxy) needs base64 body + isBase64Encoded for binary media.
     b64 = base64.b64encode(audio_bytes).decode("ascii")
     return {
@@ -95,7 +95,7 @@ def _audio_response(audio_bytes: bytes) -> Dict[str, Any]:
     }
 
 
-def _server_error(msg: str) -> Dict[str, Any]:
+def _server_error(msg: str) -> dict[str, Any]:
     return {
         "statusCode": 500,
         "headers": {"Content-Type": "application/json"},

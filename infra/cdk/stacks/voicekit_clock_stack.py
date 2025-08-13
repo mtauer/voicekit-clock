@@ -120,6 +120,18 @@ class VoicekitClockStack(Stack):
             )
         )
 
+        # GET /health
+        health_get_fn = _lambda.Function(
+            self,
+            "HealthGetHandler",
+            handler="api.health.get.index.handler",  # <file path>.<function name>
+            code=_lambda.Code.from_asset("lambda"),
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            architecture=_lambda.Architecture.ARM_64,  # or X86_64; ARM is cheaper
+            memory_size=128,
+            timeout=Duration.seconds(5),
+        )
+
         # API Gateway with binary media type for MP3 and API key requirement
         api = apigw.RestApi(
             self,
@@ -144,6 +156,13 @@ class VoicekitClockStack(Stack):
         next_actions_res.add_method(
             http_method="POST",
             integration=apigw.LambdaIntegration(next_actions_post_fn),
+            api_key_required=True,
+        )
+
+        health_res = api.root.add_resource("health")
+        health_res.add_method(
+            http_method="GET",
+            integration=apigw.LambdaIntegration(health_get_fn),
             api_key_required=True,
         )
 
