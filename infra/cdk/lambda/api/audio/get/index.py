@@ -34,15 +34,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     cleaned_text = re.sub(r"[^a-zA-Z0-9]", "_", text)
     cache_key = f"polly/{TTS_VOICE_ID}/{cleaned_text}.{TTS_OUTPUT_FORMAT}"
 
+    should_cache_audio = len(text) < 100
+
     # Try to serve from cache
-    try:
-        obj = s3.get_object(Bucket=BUCKET_NAME, Key=cache_key)
-        body = obj["Body"].read()
-        return _audio_response(body)
-    except ClientError as e:
-        if e.response["Error"]["Code"] != "NoSuchKey":
-            # For other S3 errors, bubble up as 500
-            return _server_error(f"S3 error: {e}")
+    if should_cache_audio:
+        try:
+            obj = s3.get_object(Bucket=BUCKET_NAME, Key=cache_key)
+            body = obj["Body"].read()
+            return _audio_response(body)
+        except ClientError as e:
+            if e.response["Error"]["Code"] != "NoSuchKey":
+                # For other S3 errors, bubble up as 500
+                return _server_error(f"S3 error: {e}")
 
     # Not cached -> synthesize with Polly, store, return
     try:
@@ -61,13 +64,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         audio_bytes = audio_stream.read()
 
         # Cache to S3
-        s3.put_object(
-            Bucket=BUCKET_NAME,
-            Key=cache_key,
-            Body=audio_bytes,
-            ContentType="audio/mpeg",
-            CacheControl="public, max-age=31536000, immutable",
-        )
+        if should_cache_audio:
+            s3.put_object(
+                Bucket=BUCKET_NAME,
+                Key=cache_key,
+                Body=audio_bytes,
+                ContentType="audio/mpeg",
+                CacheControl="public, max-age=31536000, immutable",
+            )
 
         return _audio_response(audio_bytes)
 
