@@ -25,7 +25,7 @@ def button_press_callback(count: int, *, board: Board) -> None:
             _fallback_actions(count)
 
     elif count == 6:
-        _status()
+        run_self_diagnosis()
     else:
         # Shutdown
         play_audio(
@@ -65,22 +65,24 @@ def _fallback_actions(count: int) -> None:
         )
 
 
-def _status():
+def run_self_diagnosis(verbose: bool = True):
     if _is_connected():
-        play_audio(
-            "./assets/de-DE/connection_success.mp3",
-            "Internetverbindung erfolgreich getestet.",
-        )
+        if verbose:
+            play_audio(
+                "./assets/de-DE/connection_success.mp3",
+                "Internetverbindung erfolgreich getestet.",
+            )
     else:
         play_audio(
             "./assets/de-DE/connection_error.mp3",
             "Keine Verbindung zum Internet.",
         )
     if _is_server_up():
-        play_audio(
-            "./assets/de-DE/server_up.mp3",
-            "Der Server läuft.",
-        )
+        if verbose:
+            play_audio(
+                "./assets/de-DE/server_up.mp3",
+                "Der Server läuft.",
+            )
     else:
         play_audio(
             "./assets/de-DE/server_down.mp3",
@@ -119,6 +121,7 @@ def main():
     with Board() as board:
         print("🕰️  VoiceKit Clock - Detecting button press events ...")
         play_audio("./assets/de-DE/starting.mp3", "...starte Sprachuhr.")
+        run_self_diagnosis(verbose=False)
         while True:
             if board.button.wait_for_press():
                 # Switch the LED on before the debounce time for the button events
