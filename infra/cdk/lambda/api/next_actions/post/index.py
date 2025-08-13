@@ -1,10 +1,13 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
 from typing import Any, Dict
 from zoneinfo import ZoneInfo
 
-from api.next_actions.post.models import from_weather_api_forecast_response
+from api.next_actions.post.models import (
+    from_weather_api_forecast_response,
+    DatetimeHints,
+)
 import boto3
 from botocore.exceptions import ClientError
 from utils.weather_api_client import WeatherApiClient
@@ -34,7 +37,7 @@ Hier sind ein paar Beispielnachrichten:
 ---
 
 WOCHENTAG, DATUM UND ZEIT
-{{local_long_datetime}}
+{{local_datetime_hints}}
 
 ---
 
@@ -46,9 +49,16 @@ weather_api_client = WeatherApiClient(api_key=WEATHER_API_KEY, lang=WEATHER_API_
 bedrock_client = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
 
 
-def _get_local_long_datetime() -> str:
-    berlin_now = datetime.now(ZoneInfo("Europe/Berlin"))
-    return berlin_now.strftime("%A, %Y-%m-%d %H:%M:%S")
+def _get_local_datetime_hints() -> DatetimeHints:
+    now = datetime.now(ZoneInfo("Europe/Berlin"))
+    tomorrow = now + timedelta(days=1)
+    day_after_tomorrow = now + timedelta(days=2)
+
+    return DatetimeHints(
+        now=now.strftime("%A, %Y-%m-%d %H:%M:%S"),
+        tomorrow=tomorrow.strftime("%A, %Y-%m-%d"),
+        day_after_tomorrow=day_after_tomorrow.strftime("%A, %Y-%m-%d"),
+    )
 
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -60,12 +70,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         include_alerts=True,
     )
 
+    datetime_hints = _get_local_datetime_hints()
     forecast = from_weather_api_forecast_response(wa_forecast)
 
     # Prepare prompts
     system = [{"text": SYSTEM_PROMPT}]
     user_prompt_filled = USER_PROMPT.replace(
-        "{{local_long_datetime}}", _get_local_long_datetime()
+        "{{local_datetime_hints}}", datetime_hints.model_dump_json()
     ).replace("{{weather_forecast_json}}", forecast.model_dump_json())
     messages = [
         {"role": "user", "content": [{"text": user_prompt_filled}]},

@@ -122,6 +122,12 @@ class ForecastDescription(BaseModel):
     astro_tomorrow: Astro | None = None
 
 
+class DatetimeHints(BaseModel):
+    now: str
+    tomorrow: str
+    day_after_tomorrow: str
+
+
 def from_weather_api_forecast_response(
     src: GetForecastResponse,
     # now: datetime | None = None
