@@ -19,10 +19,10 @@ load_dotenv()
 
 def button_press_callback(count: int, *, board: Board) -> None:
     if count <= 5:
-        if _is_server_up():
-            _advanced_actions(count)
-        else:
+        if not _is_connected() or not _is_server_up():
             _fallback_actions(count)
+        else:
+            _advanced_actions(count)
 
     elif count == 6:
         run_self_diagnosis()
@@ -121,7 +121,10 @@ def main():
     with Board() as board:
         print("🕰️  VoiceKit Clock - Detecting button press events ...")
         play_audio("./assets/de-DE/starting.mp3", "...starte Sprachuhr.")
-        run_self_diagnosis(verbose=False)
+
+        # TODO: Fix startup without internet connection
+        # run_self_diagnosis(verbose=False)
+
         while True:
             if board.button.wait_for_press():
                 # Switch the LED on before the debounce time for the button events
