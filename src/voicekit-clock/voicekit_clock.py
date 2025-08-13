@@ -10,6 +10,7 @@ from aiy.voice.tts import say
 
 from utils.actions import get_next_action
 from utils.audio import play_audio, synthesize_text
+from utils.health import get_health
 from utils.load_dotenv import load_dotenv
 from utils.multi_event_detector import MultiEventDetector
 
@@ -18,14 +19,13 @@ load_dotenv()
 
 def button_press_callback(count: int, *, board: Board) -> None:
     if count <= 5:
-        if not _is_connected() or not _is_server_up():
-            _fallback_actions(count)
-        else:
+        if _is_server_up():
             _advanced_actions(count)
+        else:
+            _fallback_actions(count)
 
     elif count == 6:
-        # TODO: Self-diagnosis
-        pass
+        _status()
     else:
         # Shutdown
         play_audio(
@@ -65,6 +65,29 @@ def _fallback_actions(count: int) -> None:
         )
 
 
+def _status():
+    if _is_connected():
+        play_audio(
+            "./assets/de-DE/connection_success.mp3",
+            "Internetverbindung erfolgreich getestet.",
+        )
+    else:
+        play_audio(
+            "./assets/de-DE/connection_error.mp3",
+            "Keine Verbindung zum Internet.",
+        )
+    if _is_server_up():
+        play_audio(
+            "./assets/de-DE/server_up.mp3",
+            "Der Server läuft.",
+        )
+    else:
+        play_audio(
+            "./assets/de-DE/server_down.mp3",
+            "Der Server ist gerade nicht erreichbar.",
+        )
+
+
 def _is_connected(timeout: float = 3.0) -> bool:
     """
     Returns True if there's an active internet connection, False otherwise.
@@ -84,8 +107,11 @@ def _is_connected(timeout: float = 3.0) -> bool:
 
 
 def _is_server_up() -> bool:
-    # TODO: implement
-    return True
+    try:
+        health = get_health()
+        return health["status"] == "up"
+    except RuntimeError:
+        return False
 
 
 def main():
