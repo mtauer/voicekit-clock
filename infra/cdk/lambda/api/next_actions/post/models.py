@@ -115,7 +115,7 @@ class ForecastDescription(BaseModel):
     location: Location
     localtime: LocalTime
     hours_today: list[Hour] = []
-    next_few_days: list[DailyBlock] = []
+    days_overview: list[DailyBlock] = []
     current: Current
     alerts: list[Alert] = []
     astro_today: Astro | None = None
@@ -130,7 +130,6 @@ class DatetimeHints(BaseModel):
 
 def from_weather_api_forecast_response(
     src: GetForecastResponse,
-    # now: datetime | None = None
 ) -> ForecastDescription:
     # Local time handling
     tz = ZoneInfo(src.location.tz_id)
@@ -189,13 +188,10 @@ def from_weather_api_forecast_response(
             d1 = days[1]
             astro_tomorrow = Astro(**d1.astro.model_dump())
 
-    next_3_days: list[DailyBlock] = []
-    # Build a list of ForecastDay strictly after 'today' in local tz, in order
-    future_days = [
-        d for d in days if datetime.strptime(d.date, "%Y-%m-%d").date() > today_date
-    ]
-    for d in future_days[:3]:
-        next_3_days.append(
+    days_overview: list[DailyBlock] = []
+    # Build a list of days in local tz, in order
+    for d in days[:3]:
+        days_overview.append(
             DailyBlock(
                 date=d.date,
                 summary=Day(
@@ -254,6 +250,6 @@ def from_weather_api_forecast_response(
         astro_today=astro_today,
         astro_tomorrow=astro_tomorrow,
         hours_today=hours_today,
-        next_few_days=next_3_days,
+        days_overview=days_overview,
         current=current,
     )
