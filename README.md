@@ -7,23 +7,13 @@ This low-cost proof of concept runs on a Raspberry Pi, uses **AWS** for serverle
 
 Example for the current time audio:
 
-<audio controls>
-  <source src="docs/examples/time_10_54.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
-</audio>
-
-[download mp3](docs/examples/time_10_54.mp3)
+https://github.com/user-attachments/assets/aae78b8f-c7c9-47f6-bf53-5cbd8f988418
 
 ---
 
 Example for the weather forecast audio:
 
-<audio controls>
-  <source src="docs/examples/time_13_33_weather_forecast.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
-</audio>
-
-[download mp3](docs/examples/time_13_33_weather_forecast.mp3)
+https://github.com/user-attachments/assets/02c7838c-8edc-48a1-b8c7-bb2b9b0cc1c8
 
 ## Features
 
