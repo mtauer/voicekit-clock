@@ -1,84 +1,124 @@
 # AIY Voice Kit Clock 🕰️
 
-A voice clock (and more) with a one button interface.
+A **talking clock** built for **simplicity and accessibility**. Press the green/red/white button on the Google **AIY Voice Kit** and hear the **current time** or a **compact weather update** — all spoken in **natural-sounding German**.  
+This low-cost proof of concept runs on a Raspberry Pi, uses **AWS** for serverless backend logic and **WeatherAPI.com** for forecast data, and plays audio via `mpg123`/ALSA.
 
-TODO:
+---
 
-- project description
-- German language
-- audio examples
-- clarify this is a hobby POC, not production-grade.
+Example for the current time audio:
+
+<audio controls>
+  <source src="docs/examples/time_10_54.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+
+[download mp3](docs/examples/time_10_54.mp3)
+
+---
+
+Example for the weather forecast audio:
+
+<audio controls>
+  <source src="docs/examples/time_13_33_weather_forecast.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+
+[download mp3](docs/examples/time_13_33_weather_forecast.mp3)
+
+## Features
+
+- **One-button interface** with multi-press actions (see Usage).
+- **German TTS** via AWS Polly (de-DE voice).
+- **Weather briefings** (date, weekday, time, compact forecast).
+- **Boot-time auto start** (systemd service).
+- **Lean Raspberry Pi setup** (no extra Python packages on the Pi; uses `mpg123` for playback).
+
+> [!NOTE]
+> All speech output is **German**. To maximize voice quality, a **generative** German Polly voice is configured.
 
 ## Prerequisites
 
-- **AIY Voice Kit, v1** Although the project was build and only tested with the first version of the Voice Kit there are good changes that the current version would work similarly.
-- Raspberry Pi 3 and a MicroSD card
-- WiFi (or LAN)
-- AWS account
-- (free) API key for weatherAPI.com
-- on the dev machine: AWS CLI, Python
+- **Google AIY Voice Kit v1**  
+  Built and tested with v1. Newer kits will likely work with small adjustments.
+- **Raspberry Pi 3** + MicroSD card
+- **Wi-Fi** (or LAN)
+- **AWS account**
+- [WeatherAPI.com](https://www.weatherapi.com/) API key (free tier works)
+- Dev machine: **Python 3.12**, **AWS CLI**, [Task](https://taskfile.dev/)
+
+> [!NOTE]
+> Pi-side code is compatible with **Python 3.7.3** (AIY image). Server-side Lambdas target **Python 3.12**.
 
 ## Getting Started
 
-### 📦 Prepare Voice Kit Box
+### 📦 Prepare Voice Kit
 
-Install the system image as described [here](https://aiyprojects.withgoogle.com/voice-v1/) (download the `.img.xy` file from https://github.com/google/aiyprojects-raspbian/releases; connect MicroSD card; Use [Etcher](https://etcher.balena.io/) to flash the image).
+**1) Flash the AIY image**
 
-Assemble the Voice Kit box as described insert the SD card, and connect a monitor, keyboard and a mouse. Then connect the Pi to power.
+- Follow the official guide: <https://aiyprojects.withgoogle.com/voice-v1/>
+- Download a release image: <https://github.com/google/aiyprojects-raspbian/releases>
+- Flash the `.img.xz` to the MicroSD with [Etcher](https://etcher.balena.io/).
 
-After a reboot, as the Pi needs to set up the MicroSD volume, follow the onboarding instructions (set country/language/timezone; change password; select WiFi network; update OS; restart).
+**2) First boot & hardware check**
 
-From the desktop, run "Test audio" and "Test WiFi" to verify the hardware is working correctly.
+- Assemble the Voice Kit, insert the SD card, connect monitor/keyboard/mouse, then power on.
+- Complete onboarding: country/language/timezone, change password, select Wi-Fi, update OS, restart.
+- From the desktop, run **“Test audio”** and **“Test Wi-Fi”**.
+- In a terminal, find the Pi’s Wi-Fi IP:
+  ```bash
+  ip addr show wlan0
+  ```
+  Note the inet address (which looks like `192.168.?.?`).
+- You can now disconnect monitor/keyboard/mouse for headless operation.
 
-In the terminal run
-
-```bash
-ip addr show wlan0
-```
-
-and note down the `inet` address (which looks like `192.168.?.?`).
-
-You can now disconnect the monitor, keyboard and mouse from the Voice Kit box.
+---
 
 ### 💻 Prepare Raspberry Pi for Software Installation
 
-On a dev machine that is in the same WiFi network as the Voice Kit, run:
+From your dev machine (same network as the Pi), SSH into the Pi:
 
 ```bash
 ssh pi@192.168.?.?
 ```
 
-to establish an SSH connection with the Raspberry Pi.
-
-On the Raspberry Pi install the media player `mpg123` with:
+Install the audio player:
 
 ```bash
 sudo apt install mpg123
 ```
 
-> [!NOTE]
-> Adjust the volume level by calling `alsamixer` in the SSH console.
+Adjust volume:
 
-Create a project directory with:
+```bash
+alsamixer
+```
+
+Create the project directory:
 
 ```bash
 cd AIY-projects-python/src/
 mkdir voicekit-clock
 ```
 
-> [!NOTE]
-> To avoid typing your `pi` user password each time run in a dev machine terminal (not the SSH session):
->
-> ```bash
-> ssh-keygen -t ed25519 # not needed if an SSH-key already exists
-> ssh-copy-id pi@192.168.?.?
-> ```
+Optional: Set up passwordless SSH from your dev machine (not inside the SSH session):
+
+```bash
+ssh-keygen -t ed25519 # skip if you already have a key
+ssh-copy-id pi@192.168.?.?
+```
+
+---
 
 ### ☁️ Prepare Infrastructure
 
-Duplicate the file `infra/cdk/.env.example` as `infra/cdk/.env` and fill in the [WeatherAPI](https://www.weatherapi.com/) key and weather location.
+Copy and fill the environment file:
 
-On MacOS and Linux, to manually create a virtual environment, activate it and install the required CDK/infra dependencies run:
+```bash
+cp infra/cdk/.env.example infra/cdk/.env
+# set WEATHER_API_KEY and your weather location
+```
+
+Create & activate a virtual environment; install CDK/infra dependencies:
 
 ```bash
 python3 -m venv .venv
@@ -86,67 +126,88 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-To login to your AWS account run
+Log in to AWS:
 
 ```bash
+# If using AWS SSO, run: export AWS_PROFILE=<your-sso-profile>
 task infra:login
 ```
 
-> [!NOTE]
-> If you are using an AWS SSO profile define it with `export AWS_PROFILE=<profile-name>`.
-
-Only if this is your first time using CDK on your account, run the following. The command initializes resources needed for the AWS Cloud Development Kit (CDK).
+If this is your first time with CDK in the target account/region:
 
 ```bash
 cdk bootstrap
 ```
 
-Finally, deploy server-side resources und functionality for the Voice Kit Clock run
+Deploy the serverless backend:
 
 ```bash
 task infra:deploy
 ```
 
-In the file `infra/cdk/stacks/voicekit_clock_stack.py` you can find a detailed definition of all cloud services needed for the Voice Kit Clock.
+What this deploys (at a glance):
+
+- Amazon API Gateway (voicekit-clock-api)
+- AWS Lambda functions (serverless Python 3.12 handlers)
+- IAM roles/policies for least-privilege access
+- Integration points for AWS Polly (de-DE TTS)
+- Inference access for Anthropic Claude Sonnet 4 LLM
+
+You can inspect everything in `infra/cdk/stacks/voicekit_clock_stack.py`.
+
+In the AWS Console, activate model access for `Anthropic/Claude Sonnet 4` in Bedrock.
+
+---
 
 ### 💾 Install the app on the Raspberry Pi
 
-Duplicate the file `.env.example` as `.env` and configure the `PI_HOST` IP.
+Configure the root project .env:
 
-Duplicate the file `src/voicekit-clock/.env.example` as `src/voicekit-clock/.env` and set the AWS API Gateway invoke URL as `API_BASE_URL` (AWS console -> API Gateway `voicekit-clock-api` -> Stages -> Invoke URL). Additionally set the API Gateway API key as `API_KEY`.
+```bash
+cp .env.example .env
+# set PI_HOST=<the Pi IP, e.g., 192.168.?.?>
+```
 
-To copy the client-side part of the application to the Raspberry Pi, use:
+Configure the client app .env:
+
+```bash
+cp src/voicekit-clock/.env.example src/voicekit-clock/.env
+# Set API_BASE_URL (In AWS Console → API Gateway → voicekit-clock-api → Stages → Invoke URL)
+# Set API_KEY
+```
+
+Sync the client to the Pi:
 
 ```bash
 task sync
 ```
 
-Copy the service file to the Pi with:
+Copy the systemd service file to the Pi:
 
 ```bash
 task init
 ```
 
-As a last step, log into the Raspberry Pi and and configure the app to start at Raspberry Pi startup
+Enable auto-start and start client now (on the Pi):
 
 ```bash
-# establish SSH connect with: ssh pi@192.168.?.?
+# ssh pi@192.168.?.?  # if not already connected
 sudo mv ~/voicekit-clock.service /etc/systemd/system/
 sudo chown root:root /etc/systemd/system/voicekit-clock.service
 sudo systemctl enable voicekit-clock.service
 sudo systemctl start voicekit-clock.service
 ```
 
-After the service has started successfully, you should hear "...starte Sprachuhr".
+If successful, you should hear: “…starte Sprachuhr”.
 
-Check the service with:
+Check service health:
 
 ```bash
 sudo systemctl status voicekit-clock.service
 sudo journalctl -u voicekit-clock.service --since "5 minutes ago"
 ```
 
-Restart the service with:
+Reload/restart after changes:
 
 ```bash
 sudo systemctl daemon-reload
@@ -155,14 +216,12 @@ sudo systemctl restart voicekit-clock.service
 
 ## 🕰️ Usage
 
-The Voice Kit clock is operated with a single button. Through multi-press evens multiple actions can be triggered.
+Operate everything with the single button. Multi-press events trigger actions:
 
-Press the button:
+- 1× — 🕰️ current time
+- 2× — 🌤️ compact weather forecast plus date, weekday and time
+- 5× — ℹ️ instructions
+- 6× — 🔧 self-diagnosis
+- 7× — ⏻ shutdown
 
-- **1x** — **time**
-- **2x** — **compact weather forecast plus date, weekday and time**
-- 3x — not used
-- 4x — not used
-- 5x — instructions
-- 6x — self-diagnosis
-- 7x — shutdown
+(3×/4× are reserved and not used at the moment.)
