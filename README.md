@@ -1,15 +1,14 @@
 # AIY Voice Kit Clock 🕰️
 
-A **talking clock** built for **simplicity and accessibility**. Press the green/red/white button on the Google **AIY Voice Kit** and hear the **current time** or a **compact weather update** — all spoken in **natural-sounding German**.  
+A **talking clock** built for **simplicity and accessibility**. Press the button on the Google **AIY Voice Kit** and hear the **current time** or a **compact weather update** — all spoken in **natural-sounding German**.  
 This low-cost proof of concept runs on a Raspberry Pi, uses **AWS** for serverless backend logic and **WeatherAPI.com** for forecast data, and plays audio via `mpg123`/ALSA.
 
----
+> **Why?**  
+> The project was created for someone with limited vision. The goal: a device that works with **one button**, gives **clear spoken feedback**, and avoids the complexity of menus or screens.
 
 Example for the current time audio:
 
 https://github.com/user-attachments/assets/aae78b8f-c7c9-47f6-bf53-5cbd8f988418
-
----
 
 Example for the weather forecast audio:
 
@@ -209,7 +208,8 @@ sudo systemctl restart voicekit-clock.service
 Operate everything with the single button. Multi-press events trigger actions:
 
 - 1× — 🕰️ current time
-- 2× — 🌤️ compact weather forecast plus date, weekday and time
+- 2× — 🌤️ compact weather forecast plus date, weekday and time  
+  (might take up to 15s to respond)
 - 5× — ℹ️ instructions
 - 6× — 🔧 self-diagnosis
 - 7× — ⏻ shutdown
