@@ -49,7 +49,7 @@ def _advanced_actions(count: int) -> None:
             synthesize_text(action["text"])
     elif count == 5:
         play_audio(
-            "./assets/de-DE/fallback_instructions.mp3",
+            "./assets/de-DE/instructions.mp3",
             "So functioniert die Sprachuhr:\n\nDrücke den grünen Knopf einmal, um die aktuelle Uhrzeit zu hören. Drücke ihn zweimal, für die Uhrzeit und zusätzlich einen kurzen Wetterbericht. Drücke ihn fünfmal, um diese Anleitung erneut zu hören. Drücke ihn sechsmal, um eine Selbstdiagnose zu starten. Und schließlich, drücke ihn siebenmal, um die Sprachuhr herunterzufahren.",
         )
 
@@ -60,7 +60,7 @@ def _fallback_actions(count: int) -> None:
         say(current_time_sentence, lang="de-DE")
     elif count == 5:
         play_audio(
-            "./assets/de-DE/fallback_instructions_fallback.mp3",
+            "./assets/de-DE/instructions_fallback.mp3",
             "So functioniert die Sprachuhr:\n\nDrücke den grünen Knopf einmal, um die aktuelle Uhrzeit zu hören. Drücke ihn fünfmal, um diese Anleitung erneut zu hören. Drücke ihn sechsmal, um eine Selbstdiagnose zu starten. Und schließlich, drücke ihn siebenmal, um die Sprachuhr herunterzufahren.",
         )
 
