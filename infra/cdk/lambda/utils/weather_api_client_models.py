@@ -65,11 +65,11 @@ class CurrentWa(BaseModel):
     uv: float
     gust_mph: float
     gust_kph: float
-    air_quality: AirQualityWa | None
-    short_rad: float
-    diff_rad: float
-    dni: float
-    gti: float
+    air_quality: AirQualityWa | None = None
+    short_rad: float | None = None
+    diff_rad: float | None = None
+    dni: float | None = None
+    gti: float | None = None
 
 
 class DayWa(BaseModel):
@@ -93,7 +93,7 @@ class DayWa(BaseModel):
     daily_chance_of_snow: int
     condition: ConditionWa
     uv: float
-    air_quality: AirQualityWa
+    air_quality: AirQualityWa | None = None
 
 
 class AstroWa(BaseModel):
@@ -142,11 +142,11 @@ class HourWa(BaseModel):
     gust_mph: float
     gust_kph: float
     uv: float
-    air_quality: AirQualityWa
-    short_rad: float
-    diff_rad: float
-    dni: float
-    gti: float
+    air_quality: AirQualityWa | None = None
+    short_rad: float | None = None
+    diff_rad: float | None = None
+    dni: float | None = None
+    gti: float | None = None
 
 
 class ForecastDayWa(BaseModel):
@@ -190,4 +190,4 @@ class GetForecastResponse(BaseModel):
     location: LocationWa
     current: CurrentWa
     forecast: ForecastWa
-    alerts: AlertsWa | None
+    alerts: AlertsWa
