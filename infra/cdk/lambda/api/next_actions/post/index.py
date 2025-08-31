@@ -5,7 +5,7 @@ from typing import Any, Dict
 from zoneinfo import ZoneInfo
 
 from api.next_actions.post.models import (
-    from_weather_api_forecast_response,
+    weather_api_forecast_response_to_forecast_description,
     DatetimeHints,
 )
 import boto3
@@ -61,80 +61,98 @@ def _get_local_datetime_hints() -> DatetimeHints:
     )
 
 
-def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
-    forecast_days = 3
-    wa_forecast = weather_api_client.get_forecast(
-        q=WEATHER_API_LOCATION,
-        days=forecast_days,
-        include_aqi=True,
-        include_alerts=True,
+def _json_response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "statusCode": status,
+        "headers": {"Content-Type": "application/json"},
+        "body": json.dumps(body, ensure_ascii=False),
+    }
+
+
+def _error_response(exc: Exception, code: str = "INTERNAL_ERROR") -> Dict[str, Any]:
+    print(f"[ERROR] {code}: {repr(exc)}")
+    return _json_response(
+        500,
+        {
+            "error": {
+                "code": code,
+                "message": "Internal server error",
+            }
+        },
     )
 
-    datetime_hints = _get_local_datetime_hints()
-    forecast = from_weather_api_forecast_response(wa_forecast)
 
-    # Prepare prompts
-    system = [{"text": SYSTEM_PROMPT}]
-    user_prompt_filled = USER_PROMPT.replace(
-        "{{local_datetime_hints}}", datetime_hints.model_dump_json()
-    ).replace("{{weather_forecast_json}}", forecast.model_dump_json())
-    messages = [
-        {"role": "user", "content": [{"text": user_prompt_filled}]},
-    ]
-
-    print("+++ system", system)
-    print("+++ messages", messages)
-
-    # Call Bedrock (Converse)
+def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
-        resp = bedrock_client.converse(
-            modelId=BEDROCK_MODEL_ID,
-            system=system,
-            messages=messages,
-            inferenceConfig={
-                # keep it steady and TTS-friendly
-                "maxTokens": 400,
-                "temperature": 0.4,
-                "topP": 0.9,
+        # 1) Fetch + normalize forecast
+        forecast_days = 3
+        try:
+            wa_forecast = weather_api_client.get_forecast(
+                q=WEATHER_API_LOCATION,
+                days=forecast_days,
+                include_aqi=True,
+                include_alerts=True,
+            )
+        except Exception as e:
+            return _error_response(e, code="WEATHER_FETCH_FAILED")
+
+        datetime_hints = _get_local_datetime_hints()
+        try:
+            forecast = weather_api_forecast_response_to_forecast_description(
+                wa_forecast
+            )
+        except Exception as e:
+            return _error_response(e, code="FORECAST_PARSE_FAILED")
+
+        # 2) Build prompts
+        system = [{"text": SYSTEM_PROMPT}]
+        user_prompt_filled = USER_PROMPT.replace(
+            "{{local_datetime_hints}}", datetime_hints.model_dump_json()
+        ).replace("{{weather_forecast_json}}", forecast.model_dump_json())
+        messages = [{"role": "user", "content": [{"text": user_prompt_filled}]}]
+
+        print("[DEBUG] system prompt:", system)
+        print("[DEBUG] messages:", messages)
+
+        # 3) Call Bedrock Converse
+        try:
+            resp = bedrock_client.converse(
+                modelId=BEDROCK_MODEL_ID,
+                system=system,
+                messages=messages,
+                inferenceConfig={
+                    "maxTokens": 400,
+                    "temperature": 0.4,
+                    "topP": 0.9,
+                },
+            )
+        except ClientError as e:
+            return _error_response(e, code="BEDROCK_CLIENT_ERROR")
+        except Exception as e:
+            return _error_response(e, code="BEDROCK_CALL_FAILED")
+
+        # 4) Extract text
+        outputs = resp.get("output", {}).get("message", {}).get("content", [])
+        llm_text_parts = [
+            part.get("text", "") for part in outputs if isinstance(part, dict)
+        ]
+        llm_text = "".join(llm_text_parts).strip()
+
+        if not llm_text:
+            return _error_response(
+                RuntimeError("Empty model output"), code="LLM_EMPTY_OUTPUT"
+            )
+
+        print("[DEBUG] llm_text:", llm_text)
+
+        # 5) Success
+        return _json_response(
+            200,
+            {
+                "action_type": "say",
+                "text": llm_text,
             },
         )
-        # Extract text (Converse returns output.message.content list)
-        outputs = resp.get("output", {}).get("message", {}).get("content", [])
-        llm_text = ""
-        for part in outputs:
-            if "text" in part:
-                llm_text += part["text"]
-        if not llm_text:
-            llm_text = "Entschuldigung, ich konnte die Wetterzusammenfassung gerade nicht erzeugen."
 
-        print("+++ llm_text", llm_text)
-
-        return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps(
-                {
-                    "action_type": "say",
-                    "text": llm_text.strip(),
-                },
-                ensure_ascii=False,
-            ),
-        }
-
-    except ClientError as e:
-        # Fallback path if Bedrock errors—keeps device usable
-        print("Bedrock error:", repr(e))
-        return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps(
-                {
-                    "action_type": "say",
-                    "text": (
-                        "Entschuldigung, der Wetterdienst ist momentan nicht erreichbar. "
-                        "Bitte versuche es später erneut."
-                    ),
-                },
-                ensure_ascii=False,
-            ),
-        }
+    except Exception as e:
+        return _error_response(e, code="UNHANDLED_EXCEPTION")

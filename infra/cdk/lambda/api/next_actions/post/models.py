@@ -128,7 +128,7 @@ class DatetimeHints(BaseModel):
     day_after_tomorrow: str
 
 
-def from_weather_api_forecast_response(
+def weather_api_forecast_response_to_forecast_description(
     src: GetForecastResponse,
 ) -> ForecastDescription:
     # Local time handling
