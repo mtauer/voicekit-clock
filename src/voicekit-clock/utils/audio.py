@@ -1,20 +1,30 @@
+import contextlib
+import logging
 import os
 import subprocess
-import urllib.request
 import urllib.parse
-import contextlib
+import urllib.request
 
 
 def play_audio(mp3_path: str, content: str) -> None:
-    print(f'🔈  "{content}"')
+    """
+    Convert and play synthesized speech audio on the Raspberry Pi.
 
-    # Workaround explanation:
-    # On the Raspberry Pi (especially with the AIY Voice Kit), playing MP3s directly with mpg123
-    # sometimes causes crackling or sizzling noises due to mismatches between the MP3 audio format
-    # and the ALSA audio output.
-    #
-    # By first converting the MP3 to a 48 kHz WAV file (a format ALSA handles more consistently),
-    # and then playing it with `aplay`, we achieve clean and stable audio output without distortion.
+    This function takes an MP3 file, converts it to a 48 kHz WAV file using
+    `mpg123`, and then plays the WAV with `aplay`. The conversion step is
+    necessary because direct playback of MP3s through ALSA on the AIY Voice
+    Kit often results in crackling or distorted sound. WAV at 48 kHz is handled
+    much more reliably by the hardware.
+
+    Args:
+        mp3_path: Path to the MP3 file to play.
+        content: The original text that was synthesized (logged for traceability).
+
+    Notes:
+        - Logs a warning if playback or cleanup fails.
+        - Temporary WAV files are always removed in a `finally` block.
+    """
+    logging.info(f'🔈  "{content}"')
 
     try:
         wav_path = "voicekit_clock_audio.wav"
@@ -28,23 +38,32 @@ def play_audio(mp3_path: str, content: str) -> None:
         subprocess.run(["aplay", "-q", wav_path], check=True)
 
     except subprocess.CalledProcessError as e:
-        print(f"Playback with mpg123 failed: {e}")
-
-    try:
-        # Remove temp wav file
-        subprocess.run(["rm", wav_path], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Remove temp wav file failed: {e}")
+        logging.error(f"Playback with mpg123 failed: {e}")
+    finally:
+        try:
+            # Remove temp wav file
+            subprocess.run(["rm", wav_path], check=True)
+        except subprocess.CalledProcessError as e:
+            logging.warning(f"Remove temp wav file failed: {e}")
 
 
 def synthesize_text(content: str) -> None:
-    print(f'🔤 -> 💿  "{content}"')
+    """
+    Generate and play back speech audio for the given text.
+
+    The method requests an MP3 audio stream from the backend
+    and plays it via `play_audio`.
+
+    Args:
+        content: The text to be synthesized.
+    """
+    logging.info(f'🔤 -> 💿  "{content}"')
 
     api_base = os.environ.get("API_BASE_URL", "").rstrip("/")
-    api_key = os.environ.get("API_KEY", "")
-
     if not api_base:
         raise RuntimeError("Missing environment variable: API_BASE_URL")
+
+    api_key = os.environ.get("API_KEY", "")
     if not api_key:
         raise RuntimeError("Missing environment variable: API_KEY")
 
@@ -57,33 +76,29 @@ def synthesize_text(content: str) -> None:
         },
     )
 
-    # Perform request and validate Content-Type
+    # Perform synthesis request and validate response
     try:
-        with contextlib.closing(urllib.request.urlopen(req, timeout=10)) as resp:
+        with contextlib.closing(urllib.request.urlopen(req, timeout=15)) as resp:
             ct = resp.info().get("Content-Type", "")
             # Some gateways return "audio/mpeg" or "audio/mpeg; charset=binary"
             if not ct.lower().startswith("audio/mpeg"):
-                raise RuntimeError("Unexpected Content-Type: %s" % ct)
+                raise Exception(f"Unexpected Content-Type: {ct}")
 
             data = resp.read()
             if not data:
-                raise RuntimeError("Empty audio payload from API")
+                raise Exception("Empty audio payload from API")
 
-    except urllib.request.HTTPError as e:
-        # Bubble up with more context
-        raise RuntimeError("API HTTPError %s: %s" % (e.code, e.read()))
-    except urllib.request.URLError as e:
-        raise RuntimeError("API URLError: %s" % getattr(e, "reason", e))
+    except Exception as e:
+        raise Exception(f"Synthesis request failed: {e}")
 
-    # Write to a temp file
+    # Write to a temp mp3 file and play it
     mp3_path = "voicekit_clock_audio.mp3"
-    with open(mp3_path, "wb") as f:
-        f.write(data)
-
-    play_audio(mp3_path, content)
-
-    # Remove temp mp3 file
     try:
-        subprocess.run(["rm", mp3_path], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Remove temp mp3 file failed: {e}")
+        with open(mp3_path, "wb") as f:
+            f.write(data)
+        play_audio(mp3_path, content)
+    finally:
+        try:
+            subprocess.run(["rm", mp3_path], check=True)
+        except subprocess.CalledProcessError as e:
+            logging.warning("Remove temp mp3 file failed: %s", e)

@@ -4,11 +4,20 @@ import urllib.request
 
 
 def get_health():
-    api_base = os.environ.get("API_BASE_URL", "").rstrip("/")
-    api_key = os.environ.get("API_KEY", "")
+    """
+    Perform a health check against the backend.
 
+    This function calls the `/health` endpoint of the Voice Kit Clock API
+    to verify that the backend service is reachable and responsive.
+
+    Returns:
+        dict: Parsed JSON response from the `/health` endpoint.
+    """
+    api_base = os.environ.get("API_BASE_URL", "").rstrip("/")
     if not api_base:
         raise RuntimeError("Missing environment variable: API_BASE_URL")
+
+    api_key = os.environ.get("API_KEY", "")
     if not api_key:
         raise RuntimeError("Missing environment variable: API_KEY")
 
@@ -20,7 +29,8 @@ def get_health():
             "x-api-key": api_key,
         },
     )
+
     with urllib.request.urlopen(req, timeout=5) as resp:
         if resp.status != 200:
-            raise RuntimeError(f"Server error {resp.status}")
+            raise Exception(f"Server error {resp.status}")
         return json.load(resp)
