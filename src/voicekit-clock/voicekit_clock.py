@@ -77,23 +77,34 @@ def _fallback_actions(count: int) -> None:
 
 
 def run_self_diagnosis(verbose: bool = True):
-    if _is_connected():
-        if verbose:
+    if not verbose:
+        # Check internet connection
+        if not _is_connected():
             play_audio(
-                "./assets/de-DE/connection_success.mp3",
-                "Internetverbindung erfolgreich getestet.",
+                "./assets/de-DE/connection_error.mp3",
+                "Keine Internetverbindung gefunden.",
             )
+        # Check server health
+        if not _is_server_up():
+            play_audio(
+                "./assets/de-DE/server_down.mp3",
+                "Der Server ist gerade nicht erreichbar.",
+            )
+        return
+
+    # Check internet connection
+    play_audio("./assets/de-DE/connection.mp3", "Internetverbindung:")
+    if _is_connected():
+        play_audio("./assets/de-DE/ok.mp3", "OK")
     else:
         play_audio(
             "./assets/de-DE/connection_error.mp3",
-            "Keine Verbindung zum Internet.",
+            "Keine Internetverbindung gefunden.",
         )
+    # Check server health
+    play_audio("./assets/de-DE/server.mp3", "Server-Verbindung:")
     if _is_server_up():
-        if verbose:
-            play_audio(
-                "./assets/de-DE/server_up.mp3",
-                "Der Server läuft.",
-            )
+        play_audio("./assets/de-DE/ok.mp3", "OK")
     else:
         play_audio(
             "./assets/de-DE/server_down.mp3",
