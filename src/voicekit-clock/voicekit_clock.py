@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import datetime
+import logging
 import socket
 import subprocess
 import time
@@ -41,7 +42,10 @@ def button_press_callback(count: int, *, board: Board) -> None:
 def _advanced_actions(count: int) -> None:
     if count == 1:
         current_time_sentence = "Es ist jetzt {:%H:%M}.".format(datetime.datetime.now())
-        synthesize_text(current_time_sentence)
+        try:
+            synthesize_text(current_time_sentence)
+        except Exception:
+            say(current_time_sentence, lang="de-DE")
     elif count == 2 or count == 3 or count == 4:
         # For multi-press events of count 2-4, let the server decide for the action
         try:
@@ -124,16 +128,13 @@ def _is_server_up() -> bool:
 
 
 def main():
-    # on startup, check for internet connection and server health
-    run_self_diagnosis(verbose=False)
-
     detector = MultiEventDetector(button_press_callback, debounce_delay=0.5)
     with Board() as board:
-        print("🕰️  VoiceKit Clock - Detecting button press events ...")
+        logging.info("🕰️  VoiceKit Clock - Detecting button press events ...")
         play_audio("./assets/de-DE/starting.mp3", "...starte Sprachuhr.")
 
-        # TODO: Fix startup without internet connection
-        # run_self_diagnosis(verbose=False)
+        # on startup, check for internet connection and server health
+        run_self_diagnosis(verbose=False)
 
         while True:
             if board.button.wait_for_press():
