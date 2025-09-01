@@ -44,9 +44,16 @@ def _advanced_actions(count: int) -> None:
         synthesize_text(current_time_sentence)
     elif count == 2 or count == 3 or count == 4:
         # For multi-press events of count 2-4, let the server decide for the action
-        action = get_next_action()
-        if action["action_type"] == "say":
-            synthesize_text(action["text"])
+        try:
+            action = get_next_action()
+            if action["action_type"] == "say":
+                synthesize_text(action["text"])
+        except Exception:
+            play_audio(
+                "./assets/de-DE/error.mp3",
+                "Technischer Fehler. Bitte später erneut probieren.",
+            )
+
     elif count == 5:
         play_audio(
             "./assets/de-DE/instructions.mp3",
@@ -104,7 +111,7 @@ def _is_connected(timeout: float = 3.0) -> bool:
         sock.connect((host, port))
         sock.close()
         return True
-    except OSError:
+    except Exception:
         return False
 
 
@@ -112,7 +119,7 @@ def _is_server_up() -> bool:
     try:
         health = get_health()
         return health["status"] == "up"
-    except RuntimeError:
+    except Exception:
         return False
 
 
