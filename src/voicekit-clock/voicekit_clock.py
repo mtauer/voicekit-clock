@@ -124,6 +124,9 @@ def _is_server_up() -> bool:
 
 
 def main():
+    # on startup, check for internet connection and server health
+    run_self_diagnosis(verbose=False)
+
     detector = MultiEventDetector(button_press_callback, debounce_delay=0.5)
     with Board() as board:
         print("🕰️  VoiceKit Clock - Detecting button press events ...")
