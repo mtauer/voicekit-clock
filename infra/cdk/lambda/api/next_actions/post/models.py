@@ -131,6 +131,25 @@ class DatetimeHints(BaseModel):
 def weather_api_forecast_response_to_forecast_description(
     src: GetForecastResponse,
 ) -> ForecastDescription:
+    """
+    Transform a raw WeatherAPI forecast response into a lean domain model.
+
+    This function strips away unused fields from the WeatherAPI response and
+    keeps only the relevant parts needed for downstream processing:
+    - Current conditions (with optional air quality).
+    - Local time metadata.
+    - Alerts (if present).
+    - Today's and tomorrow's astro data.
+    - Remaining hours of the current day (skipping past hours).
+    - A compact daily overview for up to three days.
+
+    Args:
+        src: The raw WeatherAPI forecast response object.
+
+    Returns:
+        ForecastDescription: A simplified, domain-specific forecast object.
+    """
+
     # Local time handling
     tz = ZoneInfo(src.location.tz_id)
     local_now = datetime.fromtimestamp(src.location.localtime_epoch, tz)

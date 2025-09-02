@@ -32,7 +32,7 @@ Guidelines:
 * Nutzer sollen geduzt werden.
 
 Hier sind ein paar Beispielnachrichten:
-"Guten Tag! Heute ist der 9. August. Es ist jetzt 13:33. Aktuell ist es überwiegend sonnig bei etwa 27 Grad Celsius. Im Nachmittag steigen die Temperaturen weiter bis auf rund 30 Grad. Auch am frühen Abend bleibt es weiterhin sonnig und angenehm – ein perfekter Spätsommertag!
+"Guten Tag! Heute ist der 9. August. Es ist jetzt 13:33. Aktuell ist es überwiegend sonnig bei etwa 27 Grad Celsius. Im Nachmittag steigen die Temperaturen weiter bis auf rund 30 Grad. Auch am frühen Abend bleibt es weiterhin sonnig und angenehm – ein perfekter Spätsommertag!"
 
 ---
 
@@ -49,43 +49,12 @@ weather_api_client = WeatherApiClient(api_key=WEATHER_API_KEY, lang=WEATHER_API_
 bedrock_client = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
 
 
-def _get_local_datetime_hints() -> DatetimeHints:
-    now = datetime.now(ZoneInfo("Europe/Berlin"))
-    tomorrow = now + timedelta(days=1)
-    day_after_tomorrow = now + timedelta(days=2)
-
-    return DatetimeHints(
-        now=now.strftime("%A, %Y-%m-%d %H:%M:%S"),
-        tomorrow=tomorrow.strftime("%A, %Y-%m-%d"),
-        day_after_tomorrow=day_after_tomorrow.strftime("%A, %Y-%m-%d"),
-    )
-
-
-def _json_response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
-    return {
-        "statusCode": status,
-        "headers": {"Content-Type": "application/json"},
-        "body": json.dumps(body, ensure_ascii=False),
-    }
-
-
-def _error_response(exc: Exception, code: str = "INTERNAL_ERROR") -> Dict[str, Any]:
-    print(f"[ERROR] {code}: {repr(exc)}")
-    return _json_response(
-        500,
-        {
-            "error": {
-                "code": code,
-                "message": "Internal server error",
-            }
-        },
-    )
-
-
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
         # 1) Fetch + normalize forecast
         forecast_days = 3
+        datetime_hints = _get_local_datetime_hints()
+
         try:
             wa_forecast = weather_api_client.get_forecast(
                 q=WEATHER_API_LOCATION,
@@ -96,7 +65,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         except Exception as e:
             return _error_response(e, code="WEATHER_FETCH_FAILED")
 
-        datetime_hints = _get_local_datetime_hints()
         try:
             forecast = weather_api_forecast_response_to_forecast_description(
                 wa_forecast
@@ -156,3 +124,36 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
     except Exception as e:
         return _error_response(e, code="UNHANDLED_EXCEPTION")
+
+
+def _get_local_datetime_hints() -> DatetimeHints:
+    now = datetime.now(ZoneInfo("Europe/Berlin"))
+    tomorrow = now + timedelta(days=1)
+    day_after_tomorrow = now + timedelta(days=2)
+
+    return DatetimeHints(
+        now=now.strftime("%A, %Y-%m-%d %H:%M:%S"),
+        tomorrow=tomorrow.strftime("%A, %Y-%m-%d"),
+        day_after_tomorrow=day_after_tomorrow.strftime("%A, %Y-%m-%d"),
+    )
+
+
+def _json_response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "statusCode": status,
+        "headers": {"Content-Type": "application/json"},
+        "body": json.dumps(body, ensure_ascii=False),
+    }
+
+
+def _error_response(exc: Exception, code: str = "INTERNAL_ERROR") -> Dict[str, Any]:
+    print(f"[ERROR] {code}: {repr(exc)}")
+    return _json_response(
+        500,
+        {
+            "error": {
+                "code": code,
+                "message": "Internal server error",
+            }
+        },
+    )

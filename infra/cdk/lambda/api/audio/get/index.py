@@ -17,27 +17,19 @@ TTS_OUTPUT_FORMAT = os.environ["TTS_OUTPUT_FORMAT"]
 TTS_SAMPLE_RATE = os.environ["TTS_SAMPLE_RATE"]
 
 
-def _bad_request(msg: str) -> dict[str, Any]:
-    return {
-        "statusCode": 400,
-        "headers": {"Content-Type": "application/json"},
-        "body": json.dumps({"error": msg}, ensure_ascii=False),
-    }
-
-
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     qs = (event or {}).get("queryStringParameters") or {}
     text = qs.get("text")
     if not text:
         return _bad_request("Missing required query parameter: text")
 
-    cleaned_text = re.sub(r"[^a-zA-Z0-9]", "_", text)
-    cache_key = f"polly/{TTS_VOICE_ID}/{cleaned_text}.{TTS_OUTPUT_FORMAT}"
-
     should_cache_audio = len(text) < 100
 
     # Try to serve from cache
     if should_cache_audio:
+        cleaned_text = re.sub(r"[^a-zA-Z0-9]", "_", text)
+        cache_key = f"polly/{TTS_VOICE_ID}/{cleaned_text}.{TTS_OUTPUT_FORMAT}"
+
         try:
             obj = s3.get_object(Bucket=BUCKET_NAME, Key=cache_key)
             body = obj["Body"].read()
@@ -92,6 +84,14 @@ def _audio_response(audio_bytes: bytes) -> dict[str, Any]:
             "Content-Disposition": 'attachment; filename="audio.mp3"',
         },
         "body": b64,
+    }
+
+
+def _bad_request(msg: str) -> dict[str, Any]:
+    return {
+        "statusCode": 400,
+        "headers": {"Content-Type": "application/json"},
+        "body": json.dumps({"error": msg}, ensure_ascii=False),
     }
 
 

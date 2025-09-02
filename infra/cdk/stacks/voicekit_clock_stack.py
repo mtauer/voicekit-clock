@@ -85,6 +85,12 @@ class VoicekitClockStack(Stack):
             },
         )
 
+        # Bedrock requires both inference profile and foundation model
+        # permissions. The profile defines routing and usage, while the models
+        # must be explicitly listed (often across regions).
+        #
+        # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+
         # Allow invoking the EU Sonnet 4 inference profile
         LLM_INFERENCE_PROFILE_ARN = f"arn:aws:bedrock:eu-central-1:{self.account}:inference-profile/eu.anthropic.claude-sonnet-4-20250514-v1:0"
         next_actions_post_fn.add_to_role_policy(
