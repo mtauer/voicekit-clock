@@ -215,3 +215,7 @@ Operate everything with the single button. Multi-press events trigger actions:
 - 7× — ⏻ shutdown
 
 (3×/4× are reserved and not used at the moment.)
+
+## License
+
+This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
