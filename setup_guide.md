@@ -1,6 +1,6 @@
 # Setup Guide
 
-### 📦 Prepare Voice Kit
+### 📦 Prepare AIY Voice Kit v1
 
 **1) Flash the AIY image**
 
@@ -63,6 +63,7 @@ cp infra/cdk/.env.example infra/cdk/.env
 Create & activate a virtual environment; install CDK/infra dependencies:
 
 ```bash
+cd infra/cdk
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -114,8 +115,8 @@ Configure the client app .env:
 
 ```bash
 cp src/voicekit-clock/.env.example src/voicekit-clock/.env
-# Set API_BASE_URL (In AWS Console → API Gateway → voicekit-clock-api → Stages → Invoke URL)
-# Set API_KEY
+# set API_BASE_URL (Find in AWS Console → API Gateway → voicekit-clock-api → Stages → Invoke URL)
+# set API_KEY
 ```
 
 Sync the client app to the Pi:

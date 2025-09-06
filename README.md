@@ -2,7 +2,7 @@
 
 A **talking clock** for people who prefer listening over reading.
 
-Designed for **simplicity and accessibility**, it speaks the **current time** or a **compact weather update** in **natural German** at the press of a single button. This proof of concept runs on a Raspberry Pi, uses **AWS** for serverless backend logic and **WeatherAPI.com** for forecast data, and plays audio via `mpg123`/ALSA.
+Designed for **simplicity and accessibility**, it speaks the **current time** or a **compact weather update** in **natural German** at the press of a single button. This proof of concept runs on a Raspberry Pi, uses **AWS** for serverless backend logic and **WeatherAPI.com** for forecast data, and plays audio via `mpg123`/ALSA on the Pi.
 
 ## Purpose
 
@@ -16,7 +16,7 @@ The project was created for a person with limited vision. The goal: a device tha
 - **Boot-time auto start** (systemd service).
 - **Lean Raspberry Pi setup** (no extra Python packages on the Pi; uses `mpg123` for playback).
 
-All speech output is **German**. To maximize voice quality, a **generative** AWS Polly voice is configured.
+All speech output is **German**. To maximize voice quality, a **generative** AWS Polly voice is used.
 
 Audio examples:
 
@@ -25,7 +25,7 @@ Audio examples:
 
 ## Prerequisites
 
-- **Google AIY Voice Kit v1**  
+- **Google AIY Voice Kit** [v1](https://aiyprojects.withgoogle.com/voice-v1/)  
   Built and tested with the first version of the voice kit. Newer versions will likely work with small adjustments.
 - **Raspberry Pi 3** + MicroSD card
 - **Wi-Fi** (or LAN)
