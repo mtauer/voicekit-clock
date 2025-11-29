@@ -18,6 +18,7 @@ load_dotenv()
 WEATHER_API_BASE_URL = os.environ["WEATHER_API_BASE_URL"]
 WEATHER_API_KEY = os.environ["WEATHER_API_KEY"]
 WEATHER_API_LOCATION = os.environ["WEATHER_API_LOCATION"]
+INCLUDE_BIRTHDAY_CALENDAR = os.environ["INCLUDE_BIRTHDAY_CALENDAR"]
 
 
 class VoicekitClockStack(Stack):
@@ -82,6 +83,7 @@ class VoicekitClockStack(Stack):
                 "WEATHER_API_KEY": WEATHER_API_KEY,
                 "WEATHER_API_LOCATION": WEATHER_API_LOCATION,
                 "WEATHER_API_LANG": "de",
+                "INCLUDE_BIRTHDAY_CALENDAR": INCLUDE_BIRTHDAY_CALENDAR,
             },
         )
 

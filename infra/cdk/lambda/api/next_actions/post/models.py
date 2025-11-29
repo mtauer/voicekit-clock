@@ -128,6 +128,14 @@ class DatetimeHints(BaseModel):
     day_after_tomorrow: str
 
 
+class BirthdayCalendarItem(BaseModel):
+    name: str
+    relation: str | None = None
+    date: str
+    days_until_birthday: int
+    age: int | None = None
+
+
 def weather_api_forecast_response_to_forecast_description(
     src: GetForecastResponse,
 ) -> ForecastDescription:
