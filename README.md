@@ -13,6 +13,7 @@ The project was created for a person with limited vision. The goal: a device tha
 - **One-button interface** with multi-press patterns (no screen required).
 - High-quality **German Text-to-speech** via AWS Polly.
 - **Weather briefings** (date, weekday, time, compact forecast).
+- **Birthday reminders** (upcoming birthdays in the next two weeks).
 - **Boot-time auto start** (systemd service).
 - **Lean Raspberry Pi setup** (no extra Python packages on the Pi; uses `mpg123` for playback).
 
@@ -45,7 +46,7 @@ Audio examples:
 Operate everything with the single button. Multi-press events trigger actions:
 
 - 1× — 🕰️ **Current time**
-- 2× — 🌤️ **Weather forecast** + date, weekday & time (may take up to 15s to respond)
+- 2× — 🌤️ **Weather forecast** + date, weekday & time + optional birthday reminders (may take up to 15s to respond)
 - 5× — ℹ️ **Instructions**
 - 6× — 🔧 **Self-diagnosis**
 - 7× — ⏻ **Shutdown**

@@ -1,6 +1,8 @@
+from collections.abc import Iterable
 from pydantic import BaseModel
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from datetime import date, datetime
 
 from utils.weather_api_client_models import GetForecastResponse
 
@@ -126,6 +128,14 @@ class DatetimeHints(BaseModel):
     now: str
     tomorrow: str
     day_after_tomorrow: str
+
+
+class BirthdayCalendarItem(BaseModel):
+    name: str
+    relation: str | None = None
+    date: str
+    days_until_birthday: int
+    age: int | None = None
 
 
 def weather_api_forecast_response_to_forecast_description(
@@ -272,3 +282,113 @@ def weather_api_forecast_response_to_forecast_description(
         days_overview=days_overview,
         current=current,
     )
+
+
+# German month names from Contentful model -> month numbers
+_DE_MONTH_NAME_TO_NUMBER: dict[str, int] = {
+    "Januar": 1,
+    "Februar": 2,
+    "März": 3,
+    "April": 4,
+    "Mai": 5,
+    "Juni": 6,
+    "Juli": 7,
+    "August": 8,
+    "September": 9,
+    "Oktober": 10,
+    "November": 11,
+    "Dezember": 12,
+}
+
+
+def _next_birthday_and_age(
+    *,
+    day: int,
+    month: int,
+    birth_year: int | None,
+    today: date,
+) -> tuple[date, int | None, int]:
+    """
+    Returns (next_birthday_date, age_at_next_birthday_or_None, days_until_next_birthday).
+
+    Assumes that (day, month) describes a valid calendar date.
+    If not, this will raise ValueError.
+    """
+
+    # birthday this year
+    birthday_this_year = date(today.year, month, day)
+
+    if birthday_this_year >= today:
+        next_birthday = birthday_this_year
+    else:
+        # already had birthday this year -> next is next year
+        next_birthday = date(today.year + 1, month, day)
+
+    age_at_next_birthday: int | None = None
+    if birth_year is not None:
+        age_at_next_birthday = next_birthday.year - birth_year
+
+    days_until = (next_birthday - today).days
+
+    return next_birthday, age_at_next_birthday, days_until
+
+
+def map_contentful_birthday_items(
+    entries: Iterable,
+    tz_name: str = "Europe/Berlin",
+) -> list[BirthdayCalendarItem]:
+    """
+    Map Contentful `BirthdayCalendarItem` entries to a list of `BirthdayCalendarItem` Pydantic models.
+
+    - Uses `short_name` if present, otherwise `full_name`.
+    - `date` is the ISO date (`YYYY-MM-DD`) of the next birthday in the given timezone.
+    - `days_until_birthday` is counted from "today" in the given timezone.
+    - `age` is the age at the *next* birthday (or None if `birth_year` is missing).
+    """
+
+    tz = ZoneInfo(tz_name)
+    today = datetime.now(tz).date()
+
+    result: list[BirthdayCalendarItem] = []
+
+    for entry in entries:
+        fields = entry.fields()
+
+        full_name: str | None = fields.get("full_name")
+        short_name: str | None = fields.get("short_name")
+        day: int = fields["day"]
+        month_name: str = fields["month"]
+        birth_year: int | None = fields.get("birth_year")
+        relation: str | None = fields.get("relation")
+
+        if full_name is None:
+            raise ValueError("Contentful entry is missing required field 'full_name'")
+
+        try:
+            month_num = _DE_MONTH_NAME_TO_NUMBER[month_name]
+        except KeyError as exc:
+            raise ValueError(
+                f"Unknown month name from Contentful: {month_name!r}"
+            ) from exc
+
+        next_birthday, age_at_next_birthday, days_until = _next_birthday_and_age(
+            day=day,
+            month=month_num,
+            birth_year=birth_year,
+            today=today,
+        )
+
+        # Prefer short_name if present, otherwise full_name
+        name = short_name or full_name
+
+        result.append(
+            BirthdayCalendarItem(
+                name=name,
+                relation=relation,
+                date=next_birthday.isoformat(),  # e.g. "2025-03-14"
+                days_until_birthday=days_until,
+                age=age_at_next_birthday,
+            )
+        )
+
+    return result

@@ -19,6 +19,11 @@ tasks:
       - echo "Current AWS profile - AWS_PROFILE '$AWS_PROFILE', AWS_DEFAULT_PROFILE '$AWS_DEFAULT_PROFILE'"
       - aws sso login
 
+  infra:diff:
+    desc: Deploys the infrastructure and server-less code through AWS CDK.
+    cmds:
+      - cd infra/cdk && cdk diff
+
   infra:deploy:
     desc: Deploys the infrastructure and server-less code through AWS CDK.
     cmds:
