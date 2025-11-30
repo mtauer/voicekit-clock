@@ -64,7 +64,7 @@ Guidelines für Geburtstagsinformationen:
 * Die Wetter- und Zeitinformation kommt immer zuerst. Erst danach folgt ein kurzer Übergang zu den Geburtstagen.
 * Die Geburtstagsinformationen sind ein separater Absatz. Absätze sollen durch Zeilenumbrüche voneinander getrennt werden.
 * Wenn es einen oder mehrere Geburtstage innerhalb der nächsten 14 Tage gibt, fasse sie kurz zusammen.
-* Verwende vorzugsweise Formulierungen mit relativer Zeit UND Datum, zum Beispiel:
+* Verwende vorzugsweise Formulierungen mit relativer Zeit UND Datum. Formulierungslogik für relative Zeit: immer relativ zu heute, basierend auf days_until_birthday. Beispiele:
   - "In drei Tagen, am 12. März, wird deine Tochter Anna 75 Jahre alt."
   - "Morgen, am 3. April, wird dein Enkel Paul 12 Jahre alt."
   - "Heute, am 5. Mai, wird deine Enkelin Lisa 10 Jahre alt."
