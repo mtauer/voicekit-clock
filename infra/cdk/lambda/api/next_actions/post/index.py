@@ -156,7 +156,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             .replace(
                 "{{birthday_calendar_json}}",
                 json.dumps(
-                    [i.model_dump_json() for i in birthday_calendar_items],
+                    [item.model_dump_json() for item in birthday_calendar_items],
                     ensure_ascii=False,
                 ),
             )

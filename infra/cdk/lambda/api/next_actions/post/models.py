@@ -340,10 +340,10 @@ def map_contentful_birthday_items(
     """
     Map Contentful `BirthdayCalendarItem` entries to a list of `BirthdayCalendarItem` Pydantic models.
 
-    - Uses `shortName` if present, otherwise `fullName`.
+    - Uses `short_name` if present, otherwise `full_name`.
     - `date` is the ISO date (`YYYY-MM-DD`) of the next birthday in the given timezone.
     - `days_until_birthday` is counted from "today" in the given timezone.
-    - `age` is the age at the *next* birthday (or None if `birthYear` is missing).
+    - `age` is the age at the *next* birthday (or None if `birth_year` is missing).
     """
 
     tz = ZoneInfo(tz_name)
