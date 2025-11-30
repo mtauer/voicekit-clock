@@ -5,10 +5,12 @@ from typing import Any, Dict
 from zoneinfo import ZoneInfo
 import boto3
 from botocore.exceptions import ClientError
+import contentful
 
 from api.next_actions.post.models import (
     BirthdayCalendarItem,
     DatetimeHints,
+    map_contentful_birthday_items,
     weather_api_forecast_response_to_forecast_description,
 )
 from utils.weather_api_client import WeatherApiClient
@@ -19,6 +21,8 @@ WEATHER_API_LANG = os.environ["WEATHER_API_LANG"]
 WEATHER_API_LOCATION = os.environ["WEATHER_API_LOCATION"]
 BEDROCK_REGION = os.environ["BEDROCK_REGION"]
 BEDROCK_MODEL_ID = os.environ["BEDROCK_MODEL_ID"]
+CONTENTFUL_SPACE_ID = os.environ["CONTENTFUL_SPACE_ID"]
+CONTENTFUL_ACCESS_TOKEN = os.environ["CONTENTFUL_ACCESS_TOKEN"]
 INCLUDE_BIRTHDAY_CALENDAR = os.environ["INCLUDE_BIRTHDAY_CALENDAR"] == "True"
 
 SYSTEM_PROMPT = "Du bist die Stimme einer Sprachuhr, die nur einen Knopf als Eingabe und einen Lautsprecher als Ausgabe besitzt. Hauptnutzer sind seh-eingeschränkte Personen, die einen einfachen Zugang zu Informationen und Daten wünschen. Die Ausgaben sollen freundlich und leicht verständlich sein und in ganzen Sätzen formuliert werden. Sprich ausschliesslich deutsch."
@@ -58,7 +62,7 @@ Erweitere die Nachricht nach dem Wetterteil um eine kurze Information zu kommend
 
 Guidelines für Geburtstagsinformationen:
 * Die Wetter- und Zeitinformation kommt immer zuerst. Erst danach folgt ein kurzer Übergang zu den Geburtstagen.
-* Die Geburtstagsinformationen sind ein separater Absatz.
+* Die Geburtstagsinformationen sind ein separater Absatz. Absätze sollen durch Zeilenumbrüche voneinander getrennt werden.
 * Wenn es einen oder mehrere Geburtstage innerhalb der nächsten 14 Tage gibt, fasse sie kurz zusammen.
 * Verwende vorzugsweise Formulierungen mit relativer Zeit UND Datum, zum Beispiel:
   - "In drei Tagen, am 12. März, wird deine Tochter Anna 75 Jahre alt."
@@ -71,11 +75,11 @@ Guidelines für Geburtstagsinformationen:
 * Runde Geburtstage sollen speziell hervorgehoben werden.
 
 Beispiele für Übergänge vom Wetterteil zu den Geburtstagen:
-* "Außerdem gibt es demnächst zwei Geburtstage, an die du denken kannst."
 * "Und jetzt noch ein kurzer Überblick über die nächsten Geburtstage. In den nächsten zwei Wochen stehen gleich drei Geburtstage an."
 * "Zum Schluss noch ein Blick auf die drei anstehenden Geburtstage in den nächsten zwei Wochen."
 * "Außer dem Wetter gibt es noch etwas Wichtiges: die nächsten Geburtstage. Es gibt zwei in den nächsten zwei Wochen."
 * "Das war der Wetterbericht. In den nächsten zwei Wochen steht kein Geburtstag an."
+* "Außerdem gibt es demnächst zwei Geburtstage, an die du denken kannst."
 
 Wenn es KEINE Geburtstage innerhalb der nächsten 14 Tage gibt, füge nach dem Wetter einen kurzen Satz hinzu, zum Beispiel:
 * "In den nächsten zwei Wochen steht kein Geburtstag an."
@@ -133,9 +137,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         except Exception as e:
             return _error_response(e, code="FORECAST_PARSE_FAILED")
 
-        birthday_calendar_items = (
+        all_birthday_calendar_items = (
             [] if not INCLUDE_BIRTHDAY_CALENDAR else _get_birthday_calendar()
         )
+        birthday_calendar_items = [
+            item
+            for item in all_birthday_calendar_items
+            if 0 <= item.days_until_birthday <= 14
+        ]
 
         # 2) Build prompts
         system = [{"text": SYSTEM_PROMPT}]
@@ -152,7 +161,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 ),
             )
         )
-        print("+++ user_prompt_filled", user_prompt_filled)
         messages = [{"role": "user", "content": [{"text": user_prompt_filled}]}]
 
         print("[DEBUG] system prompt:", system)
@@ -215,7 +223,12 @@ def _get_local_datetime_hints() -> DatetimeHints:
 
 
 def _get_birthday_calendar() -> list[BirthdayCalendarItem]:
-    return []
+    client = contentful.Client(CONTENTFUL_SPACE_ID, CONTENTFUL_ACCESS_TOKEN)
+    cf_birthday_calendar_items = client.entries(
+        {"content_type": "birthdayCalendarItem"}
+    )
+
+    return map_contentful_birthday_items(cf_birthday_calendar_items)
 
 
 def _json_response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
