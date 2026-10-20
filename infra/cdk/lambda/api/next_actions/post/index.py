@@ -167,21 +167,32 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         print("[DEBUG] messages:", messages)
 
         # 3) Call Bedrock Converse
+        # Adaptive thinking lets the model decide how much to think, and
+        # thinking tokens count toward maxTokens, so the limit leaves room for
+        # both. Low effort keeps thinking short for a brief spoken message.
+        # Sampling parameters (temperature, topP) stay at the model defaults,
+        # because the newest Claude models reject other values; this keeps the
+        # request valid when the model is switched.
         try:
             resp = bedrock_client.converse(
                 modelId=BEDROCK_MODEL_ID,
                 system=system,
                 messages=messages,
                 inferenceConfig={
-                    "maxTokens": 400,
-                    "temperature": 0.4,
-                    "topP": 0.9,
+                    "maxTokens": 2000,
+                },
+                additionalModelRequestFields={
+                    "thinking": {"type": "adaptive"},
+                    "output_config": {"effort": "low"},
                 },
             )
         except ClientError as e:
             return _error_response(e, code="BEDROCK_CLIENT_ERROR")
         except Exception as e:
             return _error_response(e, code="BEDROCK_CALL_FAILED")
+
+        print("[DEBUG] stop reason:", resp.get("stopReason"))
+        print("[DEBUG] usage:", resp.get("usage"))
 
         # 4) Extract text
         outputs = resp.get("output", {}).get("message", {}).get("content", [])

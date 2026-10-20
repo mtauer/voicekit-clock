@@ -60,6 +60,13 @@ cp infra/cdk/.env.example infra/cdk/.env
 # set WEATHER_API_KEY and your weather location
 ```
 
+Configure the root project .env, which the `task` commands read:
+
+```bash
+cp .env.example .env
+# set AWS_PROFILE=<your-sso-profile> (a [profile ...] entry in ~/.aws/config)
+```
+
 Create & activate a virtual environment; install CDK/infra dependencies:
 
 ```bash
@@ -72,8 +79,13 @@ pip install -r requirements.txt
 Log in to AWS:
 
 ```bash
-# If using AWS SSO, run: export AWS_PROFILE=<your-sso-profile>
 task infra:login
+```
+
+Commands run directly rather than through `task` (`cdk bootstrap` and the `aws` commands below) don't read the .env. Export the profile in that shell first:
+
+```bash
+export AWS_PROFILE=<your-sso-profile>
 ```
 
 If this is your first time with CDK in the target account/region:
@@ -81,6 +93,23 @@ If this is your first time with CDK in the target account/region:
 ```bash
 cdk bootstrap
 ```
+
+Enable the LLM (Claude Sonnet 4.6 in Amazon Bedrock, set in `BEDROCK_MODEL_ID` in the stack) once per AWS account, before the first deploy:
+
+- If the account has never used an Anthropic model in Bedrock, submit Anthropic's first-time use form: in the Bedrock console for the `bedrock-runtime` endpoint (region `eu-central-1`; the newer `bedrock-mantle` console lists no Anthropic models there), open **Model catalog**, choose an Anthropic model and follow the prompt.
+- Invoke the model once as an admin user, so that Bedrock creates the AWS Marketplace subscription for it (the Lambda role is not allowed to do this). Use the Bedrock playground, or:
+
+  ```bash
+  aws bedrock-runtime converse --region eu-central-1 --model-id eu.anthropic.claude-sonnet-4-6 --messages '[{"role":"user","content":[{"text":"Hallo"}]}]'
+  ```
+
+- Wait until the subscription is ready (this can take up to 15 minutes); the status must be `AVAILABLE`:
+
+  ```bash
+  aws bedrock get-foundation-model-availability --region eu-central-1 --model-id anthropic.claude-sonnet-4-6
+  ```
+
+- Only a successful call proves access. AWS releases new models to accounts gradually: a call can fail with "is not available for this account" even when every status above looks fine. In that case use an older active model, or ask AWS Support to release the model to the account.
 
 Deploy the serverless backend:
 
@@ -94,20 +123,17 @@ What this deploys:
 - AWS Lambda functions (serverless Python 3.12 handlers)
 - IAM roles/policies for least-privilege access
 - Integration points for AWS Polly (de-DE TTS)
-- Inference access for Anthropic Claude Sonnet 4 LLM
+- Inference access for Anthropic Claude Sonnet 4.6 LLM (Amazon Bedrock, EU cross-region profile)
 
 You can inspect everything in `infra/cdk/stacks/voicekit_clock_stack.py`.
-
-In the AWS Console, activate model access for `Anthropic/Claude Sonnet 4` in Bedrock.
 
 ---
 
 ### 💾 Install the app on the Raspberry Pi
 
-Configure the root project .env:
+In the root project .env (created above), set the Pi's address:
 
 ```bash
-cp .env.example .env
 # set PI_HOST=<the Pi IP, e.g., 192.168.?.?>
 ```
 

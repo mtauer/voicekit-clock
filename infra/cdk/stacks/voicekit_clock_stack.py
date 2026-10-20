@@ -22,6 +22,34 @@ CONTENTFUL_SPACE_ID = os.environ["CONTENTFUL_SPACE_ID"]
 CONTENTFUL_ACCESS_TOKEN = os.environ["CONTENTFUL_ACCESS_TOKEN"]
 INCLUDE_BIRTHDAY_CALENDAR = os.environ["INCLUDE_BIRTHDAY_CALENDAR"]
 
+# Bedrock retires models on a schedule, and requests to a retired model fail
+# (Claude Sonnet 4, used here before, stopped answering on 2026-10-14). The
+# model card gives Claude Sonnet 4.6 an "EOL no sooner than" date of
+# 2027-02-17, with at least 6 months' notice before the end. Check the
+# model's state before relying on it:
+# https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle.html
+#
+# Claude Haiku 5.5 (end of life no sooner than 2027-10-07) is the preferred
+# successor, but on 2026-10-20 AWS had not yet released it to this account:
+# calls failed with "not available for this account" although its agreement
+# was AVAILABLE. Switch once a test call in the target account succeeds.
+BEDROCK_REGION = "eu-central-1"
+BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-6"
+# The EU cross-region profile keeps requests (including the birthday data)
+# within EU regions.
+BEDROCK_INFERENCE_PROFILE_ID = f"eu.{BEDROCK_MODEL_ID}"
+# Regions the EU profile may route to when called from BEDROCK_REGION, taken
+# from the "Geo: EU" table on the model card. Re-check it when the model
+# changes, as the IAM policy below must name every one of them.
+BEDROCK_EU_DESTINATION_REGIONS = [
+    "eu-central-1",
+    "eu-north-1",
+    "eu-south-1",
+    "eu-south-2",
+    "eu-west-1",
+    "eu-west-3",
+]
+
 
 class VoicekitClockStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -79,8 +107,8 @@ class VoicekitClockStack(Stack):
             memory_size=256,
             timeout=Duration.seconds(60),
             environment={
-                "BEDROCK_REGION": "eu-central-1",
-                "BEDROCK_MODEL_ID": "eu.anthropic.claude-sonnet-4-20250514-v1:0",
+                "BEDROCK_REGION": BEDROCK_REGION,
+                "BEDROCK_MODEL_ID": BEDROCK_INFERENCE_PROFILE_ID,
                 "WEATHER_API_BASE_URL": WEATHER_API_BASE_URL,
                 "WEATHER_API_KEY": WEATHER_API_KEY,
                 "WEATHER_API_LOCATION": WEATHER_API_LOCATION,
@@ -97,8 +125,8 @@ class VoicekitClockStack(Stack):
         #
         # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
 
-        # Allow invoking the EU Sonnet 4 inference profile
-        LLM_INFERENCE_PROFILE_ARN = f"arn:aws:bedrock:eu-central-1:{self.account}:inference-profile/eu.anthropic.claude-sonnet-4-20250514-v1:0"
+        # Allow invoking the EU inference profile
+        LLM_INFERENCE_PROFILE_ARN = f"arn:aws:bedrock:{BEDROCK_REGION}:{self.account}:inference-profile/{BEDROCK_INFERENCE_PROFILE_ID}"
         next_actions_post_fn.add_to_role_policy(
             iam.PolicyStatement(
                 actions=[
@@ -110,13 +138,8 @@ class VoicekitClockStack(Stack):
 
         # Allow invoking the routed foundation models
         DEST_LLM_MODEL_ARNS = [
-            # EU destinations for the EU Claude Sonnet 4 profile
-            "arn:aws:bedrock:eu-central-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
-            "arn:aws:bedrock:eu-west-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
-            "arn:aws:bedrock:eu-west-3::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
-            "arn:aws:bedrock:eu-north-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
-            "arn:aws:bedrock:eu-south-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
-            "arn:aws:bedrock:eu-south-2::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0",
+            f"arn:aws:bedrock:{region}::foundation-model/{BEDROCK_MODEL_ID}"
+            for region in BEDROCK_EU_DESTINATION_REGIONS
         ]
         next_actions_post_fn.add_to_role_policy(
             iam.PolicyStatement(
