@@ -167,11 +167,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         print("[DEBUG] messages:", messages)
 
         # 3) Call Bedrock Converse
-        # The model thinks before answering by default, and thinking tokens
-        # count toward maxTokens, so the limit leaves room for both. Low effort
-        # keeps thinking short for a brief spoken message. Sampling parameters
-        # (temperature, topP) stay at the model's defaults because the model
-        # rejects other values.
+        # Adaptive thinking lets the model decide how much to think, and
+        # thinking tokens count toward maxTokens, so the limit leaves room for
+        # both. Low effort keeps thinking short for a brief spoken message.
+        # Sampling parameters (temperature, topP) stay at the model defaults,
+        # because the newest Claude models reject other values; this keeps the
+        # request valid when the model is switched.
         try:
             resp = bedrock_client.converse(
                 modelId=BEDROCK_MODEL_ID,
