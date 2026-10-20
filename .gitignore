@@ -9,3 +9,7 @@ __pycache__/
 
 # environment variables
 .env
+
+# agent instructions and tickets (kept in a separate repo)
+/CLAUDE.local.md
+/tickets
